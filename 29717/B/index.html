@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Exercise Planner</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; }
+        .card { margin: 10px 0; }
+        .toast { position: fixed; bottom: 20px; right: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1 class="text-center">Exercise Planner</h1>
+    <!-- Search and Filter -->
+    <div class="mb-3" id="searchFilter">
+        <input class="form-control" id="searchInput" placeholder="Search exercises..." type="text">
+    </div>
+
+    <!-- Exercise Cards -->
+    <div class="row" id="exerciseList"></div>
+
+    <!-- Workout Plan -->
+    <div class="mt-5" id="workoutPlan">
+        <h2>Your Workout Plan</h2>
+        <ul class="list-group" id="planList"></ul>
+        <button class="btn btn-primary" onclick="saveWorkout()">Save Plan</button>
+    </div>
+</div>
+
+<!-- Exercise Detail Modal -->
+<div class="modal" id="exerciseModal" role="dialog" tabindex="-1">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Exercise Details</h5>
+                <button aria-label="Close" class="close" data-dismiss="modal" type="button">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Content will be dynamically inserted here -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-dismiss="modal" type="button">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+  const exercisesAPI = 'https://api.api-ninjas.com/v1/exercises';
+  let exercises = [];
+
+  function fetchExercises() {
+    fetch(exercisesAPI, { headers: { 'X-Api-Key': 'YOUR_API_KEY' } })
+      .then(response => response.json())
+      .then(data => {
+        exercises = data;
+        displayExercises(data);
+      });
+  }
+
+  function displayExercises(data) {
+    let html = '';
+    data.forEach(ex => {
+      html += `
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">${ex.name}</h5>
+                        <p class="card-text"><i class="fas fa-dumbbell"></i> ${ex.type}</p>
+                        <button class="btn btn-info" onclick="showDetails('${ex.name}')">Details</button>
+                        <button class="btn btn-success" onclick="addToPlan('${ex.name}')">Add to Plan</button>
+                    </div>
+                </div>
+            </div>`;
+    });
+    document.getElementById('exerciseList').innerHTML = html;
+  }
+
+  function showDetails(name) {
+    const exercise = exercises.find(ex => ex.name === name);
+    if(exercise) {
+      $('#exerciseModal .modal-body').html(`<p>${exercise.instructions}</p>`);
+      $('#exerciseModal').modal('show');
+    }
+  }
+
+  function addToPlan(name) {
+    let planList = document.getElementById('planList');
+    let li = document.createElement('li');
+    li.className = 'list-group-item';
+    li.textContent = name;
+    planList.appendChild(li);
+    showToast('Exercise added to plan!');
+  }
+
+  function saveWorkout() {
+    let items = Array.from(document.getElementById('planList').children).map(li => li.textContent);
+    localStorage.setItem('workoutPlan', JSON.stringify(items));
+    showToast('Workout plan saved!');
+  }
+
+  function showToast(message) {
+    let toast = $('<div class="toast" role="alert" aria-live="assertive" aria-atomic="true"><div class="toast-body">' + message + '</div></div>');
+    $('body').append(toast);
+    toast.toast('show');
+    setTimeout(() => toast.remove(), 3000);
+  }
+
+  document.getElementById('searchInput').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const filteredExercises = exercises.filter(ex => ex.name.toLowerCase().includes(searchTerm));
+    displayExercises(filteredExercises);
+  });
+
+  // Initial fetch
+  fetchExercises();
+</script>
+
+</body>
+</html>

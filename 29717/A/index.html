@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Workout Planner</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Arial', sans-serif; background: #f4f4f9; }
+        .container { max-width: 1200px; }
+        .card { margin: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .modal-content { border-radius: 10px; }
+        .toast { position: fixed; bottom: 20px; right: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Workout Planner</h1>
+
+    <!-- Search and Filter Section -->
+    <div class="input-group mb-3">
+        <input class="form-control" id="searchExercise" placeholder="Search exercises..." type="text">
+        <select class="form-select" id="filterMuscle">
+            <option value="">Filter by Muscle</option>
+            <!-- Options will be dynamically added -->
+        </select>
+    </div>
+
+    <!-- Exercises Display -->
+    <div class="row" id="exerciseList"></div>
+
+    <!-- Workout Plan Section -->
+    <h2>My Workout Plan</h2>
+    <div class="row" id="workoutPlan" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
+
+    <!-- Modals will be dynamically added here -->
+    <div id="modals"></div>
+</div>
+
+<!-- Toast Container -->
+<div aria-atomic="true" aria-live="polite" class="position-relative">
+    <div class="toast-container position-absolute bottom-0 end-0 p-3">
+        <div aria-atomic="true" aria-live="assertive" class="toast" id="liveToast" role="alert">
+            <div class="toast-header">
+                <strong class="me-auto">Notification</strong>
+                <button aria-label="Close" class="btn-close" data-bs-dismiss="toast" type="button"></button>
+            </div>
+            <div class="toast-body"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const apiUrl = 'https://api.api-ninjas.com/v1/exercises';
+    let exercises = [];
+    const workoutPlan = JSON.parse(localStorage.getItem('workoutPlan')) || [];
+
+    function fetchExercises() {
+      fetch(apiUrl, {headers: {'X-Api-Key': 'YOUR_API_KEY_HERE'}})
+        .then(response => response.json())
+        .then(data => {
+          exercises = data;
+          populateFilters();
+          displayExercises(exercises);
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function populateFilters() {
+      const muscles = [...new Set(exercises.map(ex => ex.muscle))].sort();
+      muscles.forEach(muscle => {
+        $('#filterMuscle').append(new Option(muscle, muscle));
+      });
+    }
+
+    function displayExercises(list) {
+      $('#exerciseList').empty();
+      list.forEach(ex => {
+        const card = `<div class="col-md-4">
+                <div class="card" draggable="true" ondragstart="drag(event)" id="${ex.name}">
+                    <div class="card-body">
+                        <h5 class="card-title">${ex.name}</h5>
+                        <p class="card-text"><strong>Muscle:</strong> ${ex.muscle}</p>
+                        <button class="btn btn-info" onclick="showExerciseModal('${ex.name}')">Details</button>
+                    </div>
+                </div>
+            </div>`;
+        $('#exerciseList').append(card);
+      });
+    }
+
+    function showExerciseModal(name) {
+      const exercise = exercises.find(ex => ex.name === name);
+      const modal = `
+        <div class="modal fade" id="exerciseModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">${exercise.name}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p><strong>Muscle:</strong> ${exercise.muscle}</p>
+                        <p><strong>Equipment:</strong> ${exercise.equipment}</p>
+                        <p><strong>Instructions:</strong> ${exercise.instructions}</p>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+      $('#modals').html(modal);
+      new bootstrap.Modal(document.getElementById('exerciseModal')).show();
+    }
+
+    function updateWorkoutPlan() {
+      displayWorkoutPlan();
+      localStorage.setItem('workoutPlan', JSON.stringify(workoutPlan));
+    }
+
+    function displayWorkoutPlan() {
+      $('#workoutPlan').empty();
+      workoutPlan.forEach(ex => {
+        const planCard = `<div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">${ex}</h5>
+                        <button class="btn btn-danger" onclick="removeFromPlan('${ex}')">Remove</button>
+                    </div>
+                </div>
+            </div>`;
+        $('#workoutPlan').append(planCard);
+      });
+    }
+
+    function removeFromPlan(exerciseName) {
+      const index = workoutPlan.indexOf(exerciseName);
+      if (index > -1) {
+        workoutPlan.splice(index, 1);
+        updateWorkoutPlan();
+        showToast('Exercise removed from plan');
+      }
+    }
+
+    function allowDrop(ev) {
+      ev.preventDefault();
+    }
+
+    function drag(ev) {
+      ev.dataTransfer.setData("text", ev.target.id);
+    }
+
+    function drop(ev) {
+      ev.preventDefault();
+      var data = ev.dataTransfer.getData("text");
+      if (!workoutPlan.includes(data)) {
+        workoutPlan.push(data);
+        updateWorkoutPlan();
+        showToast('Exercise added to plan');
+      }
+    }
+
+    function showToast(message) {
+      const toast = new bootstrap.Toast(document.getElementById('liveToast'));
+      $('.toast-body').text(message);
+      toast.show();
+    }
+
+    $('#searchExercise').on('keyup', function() {
+      const value = $(this).val().toLowerCase();
+      displayExercises(exercises.filter(ex => ex.name.toLowerCase().includes(value)));
+    });
+
+    $('#filterMuscle').on('change', function() {
+      const muscle = this.value;
+      displayExercises(muscle ? exercises.filter(ex => ex.muscle === muscle) : exercises);
+    });
+
+    fetchExercises();
+    displayWorkoutPlan();
+  });
+</script>
+</body>
+</html>

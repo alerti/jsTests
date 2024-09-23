@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Interactive Workout App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body.dark-mode {
+            background-color: #121212;
+            color: #ffffff;
+        }
+
+        .exercise-card {
+            transition: transform 0.2s;
+        }
+
+        .exercise-card:hover {
+            transform: scale(1.05);
+        }
+
+        .loader {
+            display: none;
+            margin: 0 auto;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 5px solid #3498db;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #workoutPlan {
+            position: fixed;
+            top: 50%;
+            right: 0;
+            transform: translateY(-50%);
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+            max-height: 80%;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        #workoutPlan.dark-mode {
+            background-color: #1e1e1e;
+        }
+
+        .workout-plan-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .step-image {
+            width: 100%;
+            height: auto;
+        }
+        #workoutPlan {
+            position: fixed;
+            top: 50%;
+            right: 0;
+            transform: translateY(-50%);
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+            box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+            max-height: 80%;
+            overflow-y: auto;
+            transition: right 0.3s ease-in-out;
+            z-index: 1000;
+        }
+
+        #workoutPlan.workout-hidden {
+            right: -250px; /* Move it off-screen */
+        }
+
+        #togglePlanBtn {
+            transition: right 0.3s ease-in-out;
+        }
+
+        .toggle-plan.hidden {
+            right: -50px; /* Hide the toggle button */
+        }
+    </style>
+</head>
+<body class="bg-light">
+<div class="container my-5">
+    <h1 class="text-center mb-4">Workout Planner</h1>
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <input class="form-control" id="searchInput" placeholder="Search for exercises..." type="text">
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" id="typeFilter">
+                <option value="all">All Types</option>
+                <option value="strength">Strength</option>
+                <option value="cardio">Cardio</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select class="form-select" id="difficultyFilter">
+                <option value="all">All Difficulty Levels</option>
+                <option value="beginner">Beginner</option>
+                <option value="intermediate">Intermediate</option>
+                <option value="expert">Expert</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select class="form-select" id="muscleFilter">
+                <option value="all">All Muscle Groups</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select class="form-select" id="equipmentFilter">
+                <option value="all">All Equipment</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="loader" id="loader"></div>
+
+    <div class="row" id="exerciseList"></div>
+
+    <div id="workoutPlan">
+        <h5>Your Workout Plan</h5>
+        <ul class="list-group" id="workoutPlanList"></ul>
+        <button class="btn btn-primary w-100 mt-2" id="startWorkoutBtn">  <i class="fas fa-dumbbell"></i>  Start
+            Workout</button>
+    </div>
+</div>
+
+<div aria-hidden="true" aria-labelledby="exerciseModalLabel" class="modal fade" id="exerciseModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exerciseModalLabel">Exercise Details</h5>
+                <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+            </div>
+            <div class="modal-body" id="exerciseModalBody">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Close</button>
+                <button class="btn btn-success" id="addToPlanBtn">
+                    <i class="fas fa-plus"></i> Add to Workout Plan
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div aria-hidden="true" aria-labelledby="workoutModalLabel" class="modal fade" id="workoutModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Workout Session</h5>
+                <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+            </div>
+            <div class="modal-body" id="workoutModalBody">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="prevExerciseBtn"><i class="fas fa-arrow-left"></i> Previous</button>
+                <button class="btn btn-primary" id="nextExerciseBtn">Next <i class="fas fa-arrow-right"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
+    <div class="toast align-items-center text-white bg-success border-0" id="toastMessage" role="alert">
+        <div class="d-flex">
+            <div class="toast-body" id="toastBody">
+            </div>
+            <button class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" type="button"></button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const exerciseList = document.getElementById('exerciseList');
+    const searchInput = document.getElementById('searchInput');
+    const typeFilter = document.getElementById('typeFilter');
+    const difficultyFilter = document.getElementById('difficultyFilter');
+    const muscleFilter = document.getElementById('muscleFilter');
+    const equipmentFilter = document.getElementById('equipmentFilter');
+    const loader = document.getElementById('loader');
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const workoutPlanList = document.getElementById('workoutPlanList');
+    const startWorkoutBtn = document.getElementById('startWorkoutBtn');
+
+    let exercises = [];
+    let workoutPlan = JSON.parse(localStorage.getItem('workoutPlan')) || [];
+    let currentExerciseIndex = 0;
+
+    function fetchExercises() {
+      loader.style.display = 'block';
+      axios.get('https://api.api-ninjas.com/v1/exercises', {
+          headers: { 'X-Api-Key': 'btoOkunnfcWhpo228XaSpA==gizALLEC7fSuFooj' }
+        })
+        .then(response => {
+          exercises = response.data;
+          populateFilters();
+          displayExercises(exercises);
+          loader.style.display = 'none';
+        })
+        .catch(error => {
+          console.error('Error fetching exercises:', error);
+          loader.style.display = 'none';
+          exerciseList.innerHTML = '<p class="text-danger">Error fetching exercises. Please try again later.</p>';
+        });
+    }
+
+    function populateFilters() {
+      const muscles = [...new Set(exercises.map(ex => ex.muscle))].sort();
+      const equipment = [...new Set(exercises.map(ex => ex.equipment))].sort();
+
+      muscles.forEach(muscle => {
+        const option = document.createElement('option');
+        option.value = muscle;
+        option.textContent = muscle.charAt(0).toUpperCase() + muscle.slice(1);
+        muscleFilter.appendChild(option);
+      });
+
+      equipment.forEach(eq => {
+        const option = document.createElement('option');
+        option.value = eq;
+        option.textContent = eq.charAt(0).toUpperCase() + eq.slice(1);
+        equipmentFilter.appendChild(option);
+      });
+    }
+
+    function displayExercises(exerciseArray) {
+      exerciseList.innerHTML = '';
+      if (exerciseArray.length === 0) {
+        exerciseList.innerHTML = '<p>No exercises found.</p>';
+        return;
+      }
+
+      exerciseArray.forEach((exercise, index) => {
+        const col = document.createElement('div');
+        col.className = 'col-md-4 mb-3';
+
+        const card = document.createElement('div');
+        card.className = 'card exercise-card';
+
+        card.innerHTML = `
+                <div class="card-body">
+                    <h5 class="card-title">${exercise.name}</h5>
+                    <p class="card-text">${exercise.muscle} | ${exercise.equipment} | ${exercise.difficulty}</p>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exerciseModal" onclick="viewDetails(${index})">
+                        View Details
+                    </button>
+                </div>
+            `;
+
+        col.appendChild(card);
+        exerciseList.appendChild(col);
+      });
+    }
+
+    function filterExercises() {
+      const searchQuery = searchInput.value.toLowerCase();
+      const selectedType = typeFilter.value;
+      const selectedDifficulty = difficultyFilter.value;
+      const selectedMuscle = muscleFilter.value;
+      const selectedEquipment = equipmentFilter.value;
+
+      const filteredExercises = exercises.filter(exercise => {
+        return (
+          (exercise.name.toLowerCase().includes(searchQuery)) &&
+          (selectedType === 'all' || exercise.type === selectedType) &&
+          (selectedDifficulty === 'all' || exercise.difficulty === selectedDifficulty) &&
+          (selectedMuscle === 'all' || exercise.muscle === selectedMuscle) &&
+          (selectedEquipment === 'all' || exercise.equipment === selectedEquipment)
+        );
+      });
+
+      displayExercises(filteredExercises);
+    }
+
+    searchInput.addEventListener('input', filterExercises);
+    typeFilter.addEventListener('change', filterExercises);
+    difficultyFilter.addEventListener('change', filterExercises);
+    muscleFilter.addEventListener('change', filterExercises);
+    equipmentFilter.addEventListener('change', filterExercises);
+
+    window.viewDetails = function (exerciseIndex) {
+      const exercise = exercises[exerciseIndex];
+      const modalTitle = document.getElementById('exerciseModalLabel');
+      const modalBody = document.getElementById('exerciseModalBody');
+      const addToPlanBtn = document.getElementById('addToPlanBtn');
+
+      modalTitle.textContent = exercise.name;
+      modalBody.innerHTML = `
+            <p><strong>Type:</strong> ${exercise.type}</p>
+            <p><strong>Muscle:</strong> ${exercise.muscle}</p>
+            <p><strong>Equipment:</strong> ${exercise.equipment}</p>
+            <p><strong>Difficulty:</strong> ${exercise.difficulty}</p>
+            <p><strong>Instructions:</strong> ${exercise.instructions}</p>
+        `;
+
+      addToPlanBtn.onclick = () => {
+        addToWorkoutPlan(exercise);
+        const exerciseModal = bootstrap.Modal.getInstance(document.getElementById('exerciseModal'));
+        exerciseModal.hide();
+        showToast('Exercise added to your workout plan.');
+      };
+    };
+
+    function addToWorkoutPlan(exercise) {
+      if (!workoutPlan.some(ex => ex.name === exercise.name)) {
+        workoutPlan.push(exercise);
+        saveWorkoutPlan();
+        renderWorkoutPlan();
+      } else {
+        showToast('Exercise is already in your workout plan.', 'warning');
+      }
+    }
+
+    function saveWorkoutPlan() {
+      localStorage.setItem('workoutPlan', JSON.stringify(workoutPlan));
+    }
+
+    function renderWorkoutPlan() {
+      workoutPlanList.innerHTML = '';
+      workoutPlan.forEach((exercise, index) => {
+        const li = document.createElement('li');
+        li.className = 'list-group-item workout-plan-item';
+        li.innerHTML = `
+                ${exercise.name}
+                <button class="btn btn-sm btn-danger" onclick="removeFromWorkoutPlan(${index})"><i class="fas fa-trash"></i></button>
+            `;
+        workoutPlanList.appendChild(li);
+      });
+    }
+
+    window.removeFromWorkoutPlan = function(index) {
+      workoutPlan.splice(index, 1);
+      saveWorkoutPlan();
+      renderWorkoutPlan();
+      showToast('Exercise removed from your workout plan.', 'info');
+    };
+
+    startWorkoutBtn.addEventListener('click', () => {
+      if (workoutPlan.length === 0) {
+        alert('Your workout plan is empty.');
+        return;
+      }
+      currentExerciseIndex = 0;
+      showWorkoutExercise();
+      const workoutModal = new bootstrap.Modal(document.getElementById('workoutModal'));
+      workoutModal.show();
+    });
+
+    function showWorkoutExercise() {
+      const exercise = workoutPlan[currentExerciseIndex];
+      const workoutModalBody = document.getElementById('workoutModalBody');
+      workoutModalBody.innerHTML = `
+            <h5>${exercise.name}</h5>
+            <p><strong>Instructions:</strong></p>
+            <p>${exercise.instructions}</p>
+        `;
+
+      document.getElementById('prevExerciseBtn').disabled = currentExerciseIndex === 0;
+
+      document.getElementById('nextExerciseBtn').textContent = currentExerciseIndex === workoutPlan.length - 1 ? 'Finish' : 'Next';
+    }
+
+    document.getElementById('prevExerciseBtn').addEventListener('click', () => {
+      if (currentExerciseIndex > 0) {
+        currentExerciseIndex--;
+        showWorkoutExercise();
+      }
+    });
+
+    document.getElementById('nextExerciseBtn').addEventListener('click', () => {
+      if (currentExerciseIndex < workoutPlan.length - 1) {
+        currentExerciseIndex++;
+        showWorkoutExercise();
+      } else {
+        const workoutModal = bootstrap.Modal.getInstance(document.getElementById('workoutModal'));
+        workoutModal.hide();
+        showToast('Workout complete! Great job!', 'success');
+      }
+    });
+
+    function showToast(message, type = 'success') {
+      const toastEl = document.getElementById('toastMessage');
+      const toastBody = document.getElementById('toastBody');
+      toastBody.textContent = message;
+
+      toastEl.className = `toast align-items-center text-white bg-${type} border-0`;
+      const toast = new bootstrap.Toast(toastEl);
+      toast.show();
+    }
+
+    fetchExercises();
+    renderWorkoutPlan();
+  });
+</script>
+</body>
+</html>
