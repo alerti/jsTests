@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Hobby Finder</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .card-img-top {
+            width: 100%;
+            height: 15vw;
+            object-fit: cover;
+        }
+        .modal-body img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container mt-5">
+    <h1 class="text-center">Hobby Finder</h1>
+
+    <!-- Form for hobby selection -->
+    <form class="mb-4" id="hobbyForm">
+        <div class="form-row align-items-center">
+            <div class="col">
+                <select class="form-control" id="category">
+                    <option value="">Choose Category</option>
+                    <!-- Categories would be dynamically added here -->
+                </select>
+            </div>
+            <div class="col">
+                <input class="form-control" id="quantity" max="20" min="1" placeholder="Number of Hobbies" type="number">
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-primary" type="submit">Find Hobbies</button>
+            </div>
+            <div class="col-auto">
+                <input class="form-control" id="search" placeholder="Search hobbies..." type="text">
+            </div>
+        </div>
+    </form>
+
+    <!-- Hobbies Display -->
+    <div class="row" id="hobbies"></div>
+
+    <!-- Favorites Section -->
+    <h2>Favorites</h2>
+    <div class="row" id="favorites"></div>
+
+    <!-- Modal for Hobby Detail -->
+    <div class="modal fade" id="hobbyModal" role="dialog" tabindex="-1">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Hobby Details</h5>
+                    <button aria-label="Close" class="close" data-dismiss="modal" type="button">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body"></div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-dismiss="modal" type="button">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+  $(document).ready(function() {
+    const API_KEY = 'YOUR_API_NINJAS_KEY';
+    const hobbyForm = $('#hobbyForm');
+    const hobbiesDiv = $('#hobbies');
+    const favoritesDiv = $('#favorites');
+    let hobbies = [];
+
+    // Fetch categories and populate select box
+    // This would require an endpoint or data source for categories
+    // For simplicity, let's assume we have predefined categories
+    const categories = ['outdoor', 'indoor', 'collection', 'competitive'];
+    categories.forEach(category => {
+      $('#category').append(new Option(category, category));
+    });
+
+    hobbyForm.on('submit', function(e) {
+      e.preventDefault();
+      const category = $('#category').val();
+      const quantity = $('#quantity').val();
+      fetchHobbies(category, quantity);
+    });
+
+    function fetchHobbies(category, quantity) {
+      $.ajax({
+        url: `https://api.api-ninjas.com/v1/hobbies?category=${category}&limit=${quantity}`,
+        headers: { 'X-Api-Key': API_KEY },
+        success: function(result) {
+          hobbies = result;
+          displayHobbies(hobbies);
+        },
+        error: function(ajaxContext) {
+          alert('Error fetching hobbies: ' + ajaxContext.responseText);
+        }
+      });
+    }
+
+    function displayHobbies(hobbyList) {
+      hobbiesDiv.empty();
+      hobbyList.forEach(hobby => {
+        const card = `
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <img class="card-img-top" src="${getWikiImage(hobby.name)}" alt="${hobby.name}">
+                        <div class="card-body">
+                            <h5 class="card-title">${hobby.name}</h5>
+                            <button class="btn btn-info btn-sm" onclick="showDetails('${hobby.name}')">Details</button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="toggleFavorite('${hobby.name}')">Favorite</button>
+                        </div>
+                    </div>
+                </div>`;
+        hobbiesDiv.append(card);
+      });
+    }
+
+    function getWikiImage(hobbyName) {
+      // This is a simplified version. In reality, you would use Wikipedia's API to get an image URL
+      return `https://source.unsplash.com/300x200/?${hobbyName}`; // Placeholder using Unsplash
+    }
+
+    function showDetails(hobbyName) {
+      const hobby = hobbies.find(h => h.name === hobbyName);
+      if(hobby) {
+        $('.modal-title').text(hobby.name);
+        $('.modal-body').html(`<p>${hobby.description || 'No detailed description available.'}</p>`);
+        $('#hobbyModal').modal('show');
+      }
+    }
+
+    function toggleFavorite(hobbyName) {
+      // Implement favorite toggle logic here
+      // This could save to local storage or a server-side database
+      console.log('Favorited:', hobbyName);
+    }
+
+    $('#search').on('input', function() {
+      const searchText = $(this).val().toLowerCase();
+      const filteredHobbies = hobbies.filter(hobby =>
+        hobby.name.toLowerCase().includes(searchText)
+      );
+      displayHobbies(filteredHobbies);
+    });
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hobby Finder</title>
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+    >
+    <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+            rel="stylesheet"
+    >
+    <style>
+        body {
+            background-color: #f0f2f5;
+            padding-top: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+        }
+        .hobby-card {
+            margin-bottom: 20px;
+            border: none;
+            border-radius: 10px;
+            overflow: hidden;
+            background-color: #fff;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .hobby-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        .hobby-card img {
+            height: 200px;
+            object-fit: cover;
+            width: 100%;
+        }
+        .hobby-card .card-body {
+            padding: 15px;
+        }
+        .btn-custom {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+        }
+        .btn-custom:hover {
+            background-color: #0056b3;
+        }
+        .modal-content {
+            border-radius: 15px;
+        }
+        .favorites-list {
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 15px;
+        }
+        .favorites-list .list-group-item {
+            border: none;
+            padding: 10px 0;
+        }
+        .favorites-list .list-group-item:not(:last-child) {
+            border-bottom: 1px solid #e9ecef;
+        }
+        .alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1051;
+            border-radius: 10px;
+        }
+        /* Custom scrollbar */
+        .favorites-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        .favorites-list::-webkit-scrollbar-thumb {
+            background-color: #007bff;
+            border-radius: 4px;
+        }
+        .favorites-list::-webkit-scrollbar-track {
+            background-color: #f8f9fa;
+        }
+        @media (max-width: 767.98px) {
+            .favorites-list {
+                max-height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 class="text-center mb-4"><i class="fas fa-heartbeat text-primary"></i> Hobby Finder</h1>
+    <div class="row mb-4">
+        <div class="col-md-3 mb-2">
+            <select class="form-select" id="categorySelect">
+                <option value="">All Categories</option>
+                <option value="general">General</option>
+                <option value="sports_and_outdoors">Sports and Outdoors</option>
+                <option value="education">Education</option>
+                <option value="collection">Collection</option>
+                <option value="competition">Competition</option>
+                <option value="observation">Observation</option>
+            </select>
+        </div>
+        <div class="col-md-3 mb-2">
+            <input
+                    class="form-control"
+                    id="searchInput"
+                    placeholder="Search hobbies..."
+                    type="text"
+            >
+        </div>
+        <div class="col-md-3 mb-2">
+            <input
+                    class="form-control"
+                    id="quantityInput"
+                    max="10"
+                    min="1"
+                    placeholder="Number of hobbies (1-10)"
+                    type="number"
+            >
+        </div>
+        <div class="col-md-3 text-md-end mb-2">
+            <button class="btn btn-custom w-100" id="getHobbyBtn">
+                <i class="fas fa-search"></i> Find Hobbies
+            </button>
+        </div>
+    </div>
+    <div class="row" id="hobbyDisplay"></div>
+    <h3 class="mt-5"><i class="fas fa-star text-warning"></i> My Favorite Hobbies</h3>
+    <div class="favorites-list mt-3" id="favoritesList"></div>
+</div>
+
+<div
+        aria-hidden="true"
+        aria-labelledby="hobbyModalLabel"
+        class="modal fade"
+        id="hobbyModal"
+        tabindex="-1"
+>
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="hobbyModalLabel"></h5>
+                <button
+                        aria-label="Close"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        type="button"
+                ></button>
+            </div>
+            <div class="modal-body">
+                <p id="hobbyCategory"></p>
+                <p id="hobbyDescription"></p>
+                <a class="btn btn-custom" href="#" id="hobbyLink" target="_blank">
+                    <i class="fab fa-wikipedia-w"></i> Learn more on Wikipedia
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="alertPlaceholder"></div>
+
+<script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const apiUrl = 'https://api.api-ninjas.com/v1/hobbies';
+    const apiKey = 'btoOkunnfcWhpo228XaSpA==gizALLEC7fSuFooj\n'; // Replace with your API key
+
+    const getHobbyBtn = document.getElementById('getHobbyBtn');
+    const categorySelect = document.getElementById('categorySelect');
+    const searchInput = document.getElementById('searchInput');
+    const quantityInput = document.getElementById('quantityInput');
+    const hobbyDisplay = document.getElementById('hobbyDisplay');
+    const favoritesList = document.getElementById('favoritesList');
+    const alertPlaceholder = document.getElementById('alertPlaceholder');
+
+    let hobbies = [];
+    let favorites = [];
+
+    loadFavorites();
+    renderFavorites();
+
+    getHobbyBtn.addEventListener('click', fetchHobbies);
+    searchInput.addEventListener('input', searchHobbies);
+
+    async function fetchHobbies() {
+      const category = categorySelect.value;
+      let quantity = parseInt(quantityInput.value) || 1;
+
+      if (quantity > 10) quantity = 10;
+      if (quantity < 1) quantity = 1;
+      quantityInput.value = quantity;
+
+      const hobbiesSet = new Set();
+      hobbies = [];
+      hobbyDisplay.innerHTML = '<div class="text-center my-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+
+      try {
+        while (hobbiesSet.size < quantity) {
+          const url = category ? apiUrl + '?category=' + encodeURIComponent(category) : apiUrl;
+          const response = await fetch(url, {
+            headers: { 'X-Api-Key': apiKey }
+          });
+          if (!response.ok) throw new Error('Network response was not ok');
+
+          const data = await response.json();
+          const hobbyKey = data.hobby;
+
+          if (hobbyKey && !hobbiesSet.has(hobbyKey)) {
+            hobbiesSet.add(hobbyKey);
+
+            const imageUrl = await fetchWikipediaImage(data.hobby);
+            data.imageUrl = imageUrl;
+
+            hobbies.push(data);
+          }
+        }
+
+        displayHobbies(hobbies);
+      } catch (error) {
+        console.error('Error fetching hobbies:', error);
+        hobbyDisplay.innerHTML = '<p class="text-danger text-center">Error fetching hobbies. Please try again later.</p>';
+        showAlert('Error fetching hobbies. Please try again later.', 'danger');
+      }
+    }
+
+    async function fetchWikipediaImage(hobbyName) {
+      const wikipediaApiUrl = 'https://en.wikipedia.org/w/api.php?action=query&origin=*&format=json&prop=pageimages&titles=' + encodeURIComponent(hobbyName) + '&pithumbsize=500';
+
+      try {
+        const response = await fetch(wikipediaApiUrl);
+        if (!response.ok) throw new Error('Wikipedia API response was not ok');
+
+        const data = await response.json();
+        const pages = data.query.pages;
+        const page = pages[Object.keys(pages)[0]];
+
+        if (page && page.thumbnail && page.thumbnail.source) {
+          return page.thumbnail.source;
+        } else {
+          return 'https://via.placeholder.com/600x400?text=No+Image+Available';
+        }
+      } catch (error) {
+        console.error('Error fetching image from Wikipedia:', error);
+        return 'https://via.placeholder.com/600x400?text=No+Image+Available';
+      }
+    }
+
+    function displayHobbies(hobbiesArray) {
+      hobbyDisplay.innerHTML = '';
+      hobbiesArray.forEach(function(hobbyData, index) {
+        if (hobbyData && hobbyData.hobby) {
+          const col = document.createElement('div');
+          col.className = 'col-md-6';
+
+          const card = document.createElement('div');
+          card.className = 'card hobby-card';
+
+          const imageUrl = hobbyData.imageUrl || 'https://via.placeholder.com/600x400?text=No+Image+Available';
+
+          card.innerHTML =
+            '<img src="' + imageUrl + '" alt="' + hobbyData.hobby + '">' +
+            '<div class="card-body">' +
+            '<h5 class="card-title">' + hobbyData.hobby + '</h5>' +
+            '<p class="card-text"><strong>Category:</strong> ' + formatCategory(hobbyData.category) + '</p>' +
+            '<button class="btn btn-custom mt-3" data-index="' + index + '">' +
+            '<i class="fas fa-info-circle"></i> View Details' +
+            '</button>' +
+            '</div>';
+
+          col.appendChild(card);
+          hobbyDisplay.appendChild(col);
+        }
+      });
+
+      document.querySelectorAll('.btn-custom').forEach(function(button) {
+        button.addEventListener('click', showHobbyDetails);
+      });
+    }
+
+    function showHobbyDetails(event) {
+      const index = event.currentTarget.getAttribute('data-index');
+      const hobby = hobbies[index];
+
+      if (hobby && hobby.hobby) {
+        const hobbyModal = new bootstrap.Modal(document.getElementById('hobbyModal'));
+        document.getElementById('hobbyModalLabel').textContent = hobby.hobby;
+        document.getElementById('hobbyCategory').innerHTML =
+          '<p><strong>Category:</strong> ' + formatCategory(hobby.category) + '</p>';
+        document.getElementById('hobbyDescription').innerHTML =
+          '<p><strong>Interested?</strong> Add this hobby to your favorites to keep track!</p>';
+        document.getElementById('hobbyLink').href = hobby.link;
+
+        const modalFooter = document.querySelector('#hobbyModal .modal-footer');
+        if (modalFooter) {
+          modalFooter.remove();
+        }
+        const modalContent = document.querySelector('#hobbyModal .modal-content');
+        const footer = document.createElement('div');
+        footer.className = 'modal-footer border-0';
+
+        const addToFavoritesBtn = document.createElement('button');
+        addToFavoritesBtn.className = 'btn btn-custom';
+        addToFavoritesBtn.innerHTML = '<i class="fas fa-star"></i> Add to Favorites';
+        addToFavoritesBtn.addEventListener('click', function() {
+          addToFavorites(hobby);
+          hobbyModal.hide();
+        });
+
+        footer.appendChild(addToFavoritesBtn);
+        modalContent.appendChild(footer);
+
+        hobbyModal.show();
+      } else {
+        showAlert('Unable to display hobby details.', 'warning');
+      }
+    }
+
+    function addToFavorites(hobbyData) {
+      if (hobbyData && hobbyData.hobby) {
+        if (!favorites.some(function(fav) { return fav.hobby === hobbyData.hobby; })) {
+          favorites.push(hobbyData);
+          saveFavorites();
+          renderFavorites();
+          showAlert('Hobby added to favorites!', 'success');
+        } else {
+          showAlert('This hobby is already in your favorites.', 'warning');
+        }
+      } else {
+        showAlert('Invalid hobby data.', 'danger');
+      }
+    }
+
+    function renderFavorites() {
+      favoritesList.innerHTML = '';
+      if (favorites.length === 0) {
+        favoritesList.innerHTML = '<p class="text-center">No favorites yet.</p>';
+        return;
+      }
+      favorites.forEach(function(favorite) {
+        if (favorite && favorite.hobby) {
+          const item = document.createElement('div');
+          item.className = 'd-flex justify-content-between align-items-center mb-2';
+
+          const hobbyName = document.createElement('span');
+          hobbyName.textContent = favorite.hobby;
+
+          const btnGroup = document.createElement('div');
+
+          const viewBtn = document.createElement('button');
+          viewBtn.className = 'btn btn-sm btn-outline-primary me-2';
+          viewBtn.innerHTML = '<i class="fas fa-info-circle"></i> Details';
+          viewBtn.addEventListener('click', function() { showFavoriteDetails(favorite); });
+
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'btn btn-sm btn-outline-danger';
+          removeBtn.innerHTML = '<i class="fas fa-trash"></i> Remove';
+          removeBtn.addEventListener('click', function() { removeFromFavorites(favorite); });
+
+          btnGroup.appendChild(viewBtn);
+          btnGroup.appendChild(removeBtn);
+
+          item.appendChild(hobbyName);
+          item.appendChild(btnGroup);
+          favoritesList.appendChild(item);
+        }
+      });
+    }
+
+    function showFavoriteDetails(hobby) {
+      if (hobby && hobby.hobby) {
+        const hobbyModal = new bootstrap.Modal(document.getElementById('hobbyModal'));
+        document.getElementById('hobbyModalLabel').textContent = hobby.hobby;
+        document.getElementById('hobbyCategory').innerHTML =
+          '<p><strong>Category:</strong> ' + formatCategory(hobby.category) + '</p>';
+        document.getElementById('hobbyDescription').innerHTML =
+          '<p>This hobby is in your favorites list.</p>';
+        document.getElementById('hobbyLink').href = hobby.link;
+
+        const modalFooter = document.querySelector('#hobbyModal .modal-footer');
+        if (modalFooter) {
+          modalFooter.remove();
+        }
+
+        hobbyModal.show();
+      } else {
+        showAlert('Unable to display hobby details.', 'warning');
+      }
+    }
+
+    function removeFromFavorites(hobby) {
+      favorites = favorites.filter(function(fav) { return fav.hobby !== hobby.hobby; });
+      saveFavorites();
+      renderFavorites();
+      showAlert('Hobby removed from favorites.', 'info');
+    }
+
+    function searchHobbies() {
+      const query = searchInput.value.toLowerCase();
+      const filteredHobbies = hobbies.filter(function(hobbyData) {
+        return hobbyData && hobbyData.hobby && hobbyData.hobby.toLowerCase().includes(query);
+      });
+      displayHobbies(filteredHobbies);
+    }
+
+    function showAlert(message, type) {
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML =
+        '<div class="alert alert-' + type + ' alert-dismissible fade show" role="alert">' +
+        message +
+        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+        '</div>';
+      alertPlaceholder.appendChild(wrapper);
+      setTimeout(function() {
+        const alert = bootstrap.Alert.getInstance(wrapper.firstElementChild);
+        if (alert) alert.close();
+      }, 3000);
+    }
+
+    function formatCategory(category) {
+      return category.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+    }
+
+    function saveFavorites() {
+      localStorage.setItem('favorites', JSON.stringify(favorites));
+    }
+
+    function loadFavorites() {
+      try {
+        const storedFavorites = JSON.parse(localStorage.getItem('favorites'));
+        if (Array.isArray(storedFavorites)) {
+          favorites = storedFavorites.filter(function(fav) {
+            return fav && fav.hobby;
+          });
+        } else {
+          favorites = [];
+        }
+      } catch (e) {
+        favorites = [];
+      }
+    }
+  });
+</script>
+</body>
+</html>
