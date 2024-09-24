@@ -18,6 +18,9 @@
             height: 100vh;
             background: linear-gradient(45deg, #14222e, #2c3c5a);
             color: #eaeaea;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         #startTest{
             margin-bottom: 20px;
@@ -28,18 +31,17 @@
             position: relative;
             display: inline-block;
             padding: 32px;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
             background: linear-gradient(45deg, transparent 50%, rgba(255, 255, 255, 0.08));
             background-color: #223140;
             border-radius: 24px;
             text-align: center;
             box-shadow: -16px 16px 16px 8px rgba(0, 0, 0, 0.2);
+            max-width: 600px;
+            width: 100%;
         }
 
         .loader-widget {
-            width: 500px;
+            width: 100%;
         }
 
         .loader {
@@ -50,6 +52,7 @@
             border-radius: 50%;
             background: conic-gradient(rgba(1, 182, 190, 0.3) 0%, transparent 65%);
             animation: radarRotate 2s linear infinite;
+            margin: 0 auto 20px auto;
         }
 
         @keyframes radarRotate {
@@ -59,13 +62,14 @@
         .content {
             display: flex;
             width: 100%;
-            font-size: 64px;
+            font-size: 24px;
             margin: 12px 0 32px 0;
             flex-direction: column;
+            align-items: center;
         }
 
         .content small {
-            font-size: 40%;
+            font-size: 16px;
         }
 
         button {
@@ -76,6 +80,7 @@
             border: none;
             border-radius: 8px;
             cursor: pointer;
+            transition: background-color 0.3s;
         }
 
         button:hover {
@@ -83,6 +88,53 @@
         }
 
         .hide { display: none; }
+
+        /* Toast Styles */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1055;
+        }
+
+        .toast {
+            min-width: 250px;
+            background-color: #333;
+            color: #fff;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            opacity: 0.9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: fadeIn 0.5s, fadeOut 0.5s 2.5s;
+        }
+
+        .toast.success { background-color: #4CAF50; }
+        .toast.error { background-color: #f44336; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 0.9; transform: translateY(0); }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 0.9; }
+            to { opacity: 0; }
+        }
+
+        .toast .close-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+            line-height: 1;
+        }
+        #startTest{
+            margin-top:50px;
+        }
     </style>
 </head>
 <body>
@@ -99,6 +151,9 @@
         <button class="hide" id="downloadResults">Download Results</button>
     </div>
 </div>
+
+<!-- Toast Container -->
+<div class="toast-container"></div>
 
 <script>
   document.getElementById('startTest').addEventListener('click', startSpeedTest);
@@ -127,11 +182,13 @@
         document.querySelector('.loader-content').classList.remove('hide');
         document.querySelector('.loader').classList.add('hide');
         document.getElementById('downloadResults').classList.remove('hide');
+        showToast('Speed test completed successfully!', 'success');
       })
       .catch(error => {
         console.error('Speed Test Error:', error);
-        document.querySelector('.content').innerHTML = 'Error';
+        document.querySelector('.loader-content').classList.remove('hide');
         document.querySelector('.loader').classList.add('hide');
+        showToast('Failed to perform speed test. Please try again.', 'error');
       });
   }
 
@@ -154,19 +211,22 @@
     });
   }
 
-  // Test Upload Speed (reduced file size to 5MB for faster response)
+  // Test Upload Speed
   function testUploadSpeed() {
     return new Promise((resolve, reject) => {
-      const data = new Blob([new Array(0.5 * 1024 * 1024).fill('a')], { type: 'text/plain' }); // 0.5 MB of data
+      const data = new Blob([new Uint8Array(1 * 1024 * 1024).fill(97)], { type: 'text/plain' }); // 1 MB of 'a'
       const startTime = performance.now();
-      fetch('https://cors-anywhere.herokuapp.com/https://httpbin.org/post', {
+      fetch('https://httpbin.org/post', { // Changed endpoint to httpbin.org which supports CORS
         method: 'POST',
         body: data,
       })
-        .then(() => {
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
           const endTime = performance.now();
           const duration = (endTime - startTime) / 1000; // seconds
-          const fileSizeInBits = 5 * 8 * 1024 * 1024; // 5 MB in bits
+          const fileSizeInBits = 1 * 8 * 1024 * 1024; // 1 MB in bits
           const speedInBps = fileSizeInBits / duration; // bits per second
           const speedInMbps = (speedInBps / (1024 * 1024)).toFixed(2); // Convert to Mbps
           resolve(speedInMbps);
@@ -198,21 +258,26 @@
     const increment = targetSpeed / 100;
     const interval = setInterval(() => {
       currentSpeed += increment;
-      content.innerHTML = `${elementId.split('SpeedDisplay')[0].charAt(0).toUpperCase() + elementId.split('SpeedDisplay')[0].slice(1)}: ` + currentSpeed.toFixed(2) + `<small>${unit}</small>`;
       if (currentSpeed >= targetSpeed) {
+        currentSpeed = targetSpeed;
         clearInterval(interval);
       }
+      content.innerHTML = `${capitalizeFirstLetter(elementId.split('SpeedDisplay')[0])}: ` + currentSpeed.toFixed(2) + `<small>${unit}</small>`;
     }, 20);
     content.classList.remove('hide');
   }
 
+  function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  }
+
   // Download Results
   document.getElementById('downloadResults').addEventListener('click', () => {
-    const downloadSpeed = document.getElementById('downloadSpeedDisplay').textContent.split(' ')[1];
-    const uploadSpeed = document.getElementById('uploadSpeedDisplay').textContent.split(' ')[1];
-    const ping = document.getElementById('pingDisplay').textContent.split(' ')[1];
+    const downloadSpeed = document.getElementById('downloadSpeedDisplay').textContent.split(': ')[1];
+    const uploadSpeed = document.getElementById('uploadSpeedDisplay').textContent.split(': ')[1];
+    const ping = document.getElementById('pingDisplay').textContent.split(': ')[1];
 
-    const results = `Download Speed: ${downloadSpeed} Mbps\nUpload Speed: ${uploadSpeed} Mbps\nPing: ${ping} ms`;
+    const results = `Download Speed: ${downloadSpeed} Mbps\nUpload Speed: ${uploadSpeed} Mbps\nPing: ${ping}`;
     const blob = new Blob([results], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -221,6 +286,37 @@
     a.click();
     URL.revokeObjectURL(url);
   });
+
+  // Toast Function
+  function showToast(message, type) {
+    const toastId = `toast-${Date.now()}`;
+    const toastHTML = `
+      <div class="toast ${type}" id="${toastId}">
+        <span>${message}</span>
+        <button class="close-btn">&times;</button>
+      </div>
+    `;
+    const toastContainer = document.querySelector('.toast-container');
+    toastContainer.innerHTML += toastHTML;
+    const toastElement = document.getElementById(toastId);
+    const closeBtn = toastElement.querySelector('.close-btn');
+
+    // Remove toast after 3 seconds
+    setTimeout(() => {
+      toastElement.style.opacity = '0';
+      setTimeout(() => {
+        toastElement.remove();
+      }, 500);
+    }, 3000);
+
+    // Close on button click
+    closeBtn.addEventListener('click', () => {
+      toastElement.style.opacity = '0';
+      setTimeout(() => {
+        toastElement.remove();
+      }, 500);
+    });
+  }
 </script>
 
 </body>

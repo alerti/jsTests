@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Event Manager</title>
+    <!-- Bootstrap CSS for Responsive Design -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom Styles -->
+    <style>
+        /* Custom Styles */
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f9fafb;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        h2 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* Search and Filter Styles */
+        .search-filter-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .search-filter-container input,
+        .search-filter-container select {
+            flex: 1 1 200px;
+            max-width: 300px;
+        }
+
+        /* Event Cards Grid */
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        /* Event Card Styles */
+        .event-card {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .event-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .event-card img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+        }
+
+        .event-card-body {
+            padding: 15px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .event-card-title {
+            font-size: 20px;
+            margin: 0 0 10px 0;
+            color: #007bff;
+        }
+
+        .event-card-text {
+            flex-grow: 1;
+            color: #555;
+        }
+
+        .event-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+        }
+
+        .like-btn {
+            color: #ff6666;
+            cursor: pointer;
+            transition: color 0.3s;
+            font-size: 20px;
+        }
+
+        .like-btn.liked {
+            color: red;
+        }
+
+        .wishlist-btn, .view-btn {
+            padding: 6px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .wishlist-btn {
+            background-color: #17a2b8;
+            color: #fff;
+            margin-right: 5px;
+        }
+
+        .wishlist-btn:hover {
+            background-color: #138496;
+        }
+
+        .view-btn {
+            background-color: #6c757d;
+            color: #fff;
+        }
+
+        .view-btn:hover {
+            background-color: #5a6268;
+        }
+
+        /* Wishlist Styles */
+        .wishlist {
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .wishlist-card {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            transition: background-color 0.3s;
+        }
+
+        .wishlist-card:hover {
+            background-color: #e2e6ea;
+        }
+
+        .wishlist-card h5 {
+            margin: 0 0 5px 0;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .wishlist-card p {
+            margin: 0;
+            color: #555;
+        }
+
+        .remove-btn, .download-btn {
+            padding: 6px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+            margin-left: 5px;
+        }
+
+        .remove-btn {
+            background-color: #dc3545;
+            color: #fff;
+        }
+
+        .remove-btn:hover {
+            background-color: #c82333;
+        }
+
+        .download-btn {
+            background-color: #28a745;
+            color: #fff;
+        }
+
+        .download-btn:hover {
+            background-color: #218838;
+        }
+
+        /* Pagination Styles */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-top: 20px;
+        }
+
+        .pagination-container button {
+            padding: 8px 12px;
+            background-color: #e9ecef;
+            color: #333;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .pagination-container button.active {
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        .pagination-container button:hover:not(.active) {
+            background-color: #ced4da;
+        }
+
+        /* Modal Styles */
+        .modal-header {
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        /* Toast Styles */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1055;
+        }
+
+        /* Logo in PDF */
+        /* Add your logo URL here */
+        /* This will be used in the downloadInvite function */
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Event List -->
+    <section class="event-list">
+        <h2>Explore Events</h2>
+        <!-- Search and Filters -->
+        <div class="search-filter-container">
+            <input aria-label="Search events" class="form-control" id="search-input" placeholder="Search events..." type="text">
+            <select aria-label="Filter by location" class="form-select" id="filter-location">
+                <option value="">All Locations</option>
+                <!-- Dynamically populated -->
+            </select>
+            <select aria-label="Filter by date" class="form-select" id="filter-date">
+                <option value="">All Dates</option>
+                <option value="upcoming">Upcoming Events</option>
+                <option value="past">Past Events</option>
+            </select>
+            <select aria-label="Filter by category" class="form-select" id="filter-category">
+                <option value="">All Categories</option>
+                <!-- Dynamically populated -->
+            </select>
+            <select aria-label="Sort events" class="form-select" id="sort-events">
+                <option value="">Sort By</option>
+                <option value="date-asc">Date: Ascending</option>
+                <option value="date-desc">Date: Descending</option>
+                <option value="name-asc">Name: A to Z</option>
+                <option value="name-desc">Name: Z to A</option>
+            </select>
+        </div>
+        <!-- Events Container -->
+        <div class="cards-container" id="events-container"></div>
+        <!-- Pagination -->
+        <div class="pagination-container" id="pagination-container"></div>
+    </section>
+
+    <!-- Wishlist -->
+    <section class="wishlist">
+        <h2>Your Wishlist</h2>
+        <div id="wishlist-container"></div>
+    </section>
+</div>
+
+<!-- Event Details Modal -->
+<div aria-hidden="true" aria-labelledby="eventModalLabel" class="modal fade" id="eventModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventModalLabel">Event Details</h5>
+                <button aria-label="Close" class="btn-close btn-close-white" data-bs-dismiss="modal" type="button"></button>
+            </div>
+            <div class="modal-body">
+                <img alt="Event Image" class="img-fluid mb-3 rounded" id="modal-event-image" src="">
+                <h4 id="modal-event-name"></h4>
+                <p><strong>Date:</strong> <span id="modal-event-date"></span></p>
+                <p><strong>Location:</strong> <span id="modal-event-location"></span></p>
+                <p id="modal-event-description"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Close</button>
+                <button class="btn btn-primary" id="modal-add-wishlist-btn" type="button">Add to Wishlist</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container position-fixed top-0 end-0 p-3">
+    <!-- Toasts will be dynamically generated here -->
+</div>
+
+<!-- jsPDF Library for PDF Generation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+<!-- Bootstrap JS for Modal and Responsive Behavior -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Font Awesome JS for Icons -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+<script>
+  // Sample array of events with images, descriptions, and categories
+  const events = [
+    { id: 1, name: 'Music Concert', date: '2024-10-05', location: 'New York', description: 'Join us for an unforgettable night of live music featuring top artists.', image: 'https://via.placeholder.com/400x250?text=Music+Concert', category: 'Music', liked: false },
+    { id: 2, name: 'Tech Conference', date: '2024-11-12', location: 'San Francisco', description: 'Explore the latest advancements in technology and network with industry leaders.', image: 'https://via.placeholder.com/400x250?text=Tech+Conference', category: 'Technology', liked: false },
+    { id: 3, name: 'Art Exhibition', date: '2024-09-29', location: 'London', description: 'Discover stunning artworks from emerging and established artists.', image: 'https://via.placeholder.com/400x250?text=Art+Exhibition', category: 'Art', liked: false },
+    { id: 4, name: 'Film Festival', date: '2024-12-01', location: 'Paris', description: 'Experience a showcase of the best independent films from around the world.', image: 'https://via.placeholder.com/400x250?text=Film+Festival', category: 'Film', liked: false },
+    { id: 5, name: 'Charity Run', date: '2024-10-18', location: 'Tokyo', description: 'Participate in a run to support local charities and promote health.', image: 'https://via.placeholder.com/400x250?text=Charity+Run', category: 'Sports', liked: false },
+    { id: 6, name: 'Food Expo', date: '2024-11-20', location: 'Berlin', description: 'Taste a variety of cuisines and attend cooking workshops with chefs.', image: 'https://via.placeholder.com/400x250?text=Food+Expo', category: 'Food', liked: false },
+    { id: 7, name: 'Book Fair', date: '2024-09-15', location: 'Toronto', description: 'Meet your favorite authors and discover new literary works.', image: 'https://via.placeholder.com/400x250?text=Book+Fair', category: 'Literature', liked: false },
+    { id: 8, name: 'Marathon', date: '2024-10-22', location: 'Boston', description: 'Challenge yourself in one of the most historic marathons in the world.', image: 'https://via.placeholder.com/400x250?text=Marathon', category: 'Sports', liked: false },
+    { id: 9, name: 'Startup Meetup', date: '2024-11-05', location: 'Austin', description: 'Connect with entrepreneurs and investors in the thriving startup ecosystem.', image: 'https://via.placeholder.com/400x250?text=Startup+Meetup', category: 'Business', liked: false },
+    { id: 10, name: 'Dance Workshop', date: '2024-12-10', location: 'Rio de Janeiro', description: 'Learn new dance styles from professional instructors in a fun environment.', image: 'https://via.placeholder.com/400x250?text=Dance+Workshop', category: 'Dance', liked: false },
+    // Add more events as needed
+  ];
+
+  // Get DOM Elements
+  const eventsContainer = document.getElementById('events-container');
+  const wishlistContainer = document.getElementById('wishlist-container');
+  const searchInput = document.getElementById('search-input');
+  const filterLocation = document.getElementById('filter-location');
+  const filterDate = document.getElementById('filter-date');
+  const filterCategory = document.getElementById('filter-category');
+  const sortEvents = document.getElementById('sort-events');
+  const paginationContainer = document.getElementById('pagination-container');
+  const toastContainer = document.querySelector('.toast-container');
+
+  // Modal Elements
+  const eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
+  const modalEventImage = document.getElementById('modal-event-image');
+  const modalEventName = document.getElementById('modal-event-name');
+  const modalEventDate = document.getElementById('modal-event-date');
+  const modalEventLocation = document.getElementById('modal-event-location');
+  const modalEventDescription = document.getElementById('modal-event-description');
+  const modalAddWishlistBtn = document.getElementById('modal-add-wishlist-btn');
+
+  // Wishlist stored in localStorage
+  let wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
+
+  // Liked events stored in localStorage
+  let likedEvents = JSON.parse(localStorage.getItem('likedEvents')) || [];
+
+  // Pagination Variables
+  let currentPage = 1;
+  const eventsPerPage = 8;
+  let filteredEvents = [...events];
+
+  // Initialize Application
+  document.addEventListener('DOMContentLoaded', () => {
+    populateLocationFilter();
+    populateCategoryFilter();
+    loadLikedEvents();
+    applyFilters();
+    setupEventListeners();
+    displayWishlist();
+  });
+
+  // Populate Location Filter Dynamically
+  function populateLocationFilter() {
+    const locations = [...new Set(events.map(event => event.location))].sort();
+    locations.forEach(location => {
+      const option = document.createElement('option');
+      option.value = location;
+      option.textContent = location;
+      filterLocation.appendChild(option);
+    });
+  }
+
+  // Populate Category Filter Dynamically
+  function populateCategoryFilter() {
+    const categories = [...new Set(events.map(event => event.category))].sort();
+    categories.forEach(category => {
+      const option = document.createElement('option');
+      option.value = category;
+      option.textContent = category;
+      filterCategory.appendChild(option);
+    });
+  }
+
+  // Load Liked Events from localStorage
+  function loadLikedEvents() {
+    likedEvents.forEach(eventId => {
+      const event = events.find(e => e.id === eventId);
+      if (event) {
+        event.liked = true;
+      }
+    });
+  }
+
+  // Setup Event Listeners
+  function setupEventListeners() {
+    searchInput.addEventListener('input', () => {
+      currentPage = 1;
+      applyFilters();
+    });
+
+    filterLocation.addEventListener('change', () => {
+      currentPage = 1;
+      applyFilters();
+    });
+
+    filterDate.addEventListener('change', () => {
+      currentPage = 1;
+      applyFilters();
+    });
+
+    filterCategory.addEventListener('change', () => {
+      currentPage = 1;
+      applyFilters();
+    });
+
+    sortEvents.addEventListener('change', () => {
+      applyFilters();
+    });
+
+    // Wishlist Event Delegation
+    wishlistContainer.addEventListener('click', (e) => {
+      if (e.target.closest('.remove-btn')) {
+        const eventId = parseInt(e.target.closest('.remove-btn').dataset.id);
+        removeFromWishlist(eventId);
+      } else if (e.target.closest('.download-btn')) {
+        const eventId = parseInt(e.target.closest('.download-btn').dataset.id);
+        downloadInvite(eventId);
+      }
+    });
+
+    // Events Container Event Delegation
+    eventsContainer.addEventListener('click', (e) => {
+      if (e.target.closest('.like-btn')) {
+        const eventId = parseInt(e.target.closest('.like-btn').dataset.id);
+        toggleLike(eventId);
+      } else if (e.target.closest('.wishlist-btn')) {
+        const eventId = parseInt(e.target.closest('.wishlist-btn').dataset.id);
+        addToWishlist(eventId);
+      } else if (e.target.closest('.view-btn')) {
+        const eventId = parseInt(e.target.closest('.view-btn').dataset.id);
+        viewEventDetails(eventId);
+      }
+    });
+
+    // Modal Add to Wishlist Button
+    modalAddWishlistBtn.addEventListener('click', () => {
+      const eventId = parseInt(modalAddWishlistBtn.dataset.id);
+      addToWishlist(eventId);
+      eventModal.hide();
+    });
+  }
+
+  // Apply Filters and Search
+  function applyFilters() {
+    const query = searchInput.value.toLowerCase();
+    const location = filterLocation.value;
+    const dateFilter = filterDate.value;
+    const category = filterCategory.value;
+    const sortOption = sortEvents.value;
+
+    filteredEvents = events.filter(event => {
+      const matchesQuery = event.name.toLowerCase().includes(query) ||
+        event.location.toLowerCase().includes(query) ||
+        event.date.includes(query);
+      const matchesLocation = location ? event.location === location : true;
+      const matchesCategory = category ? event.category === category : true;
+      const matchesDate = (() => {
+        const eventDate = new Date(event.date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Reset time for accurate comparison
+        if (dateFilter === 'upcoming') {
+          return eventDate >= today;
+        } else if (dateFilter === 'past') {
+          return eventDate < today;
+        }
+        return true;
+      })();
+      return matchesQuery && matchesLocation && matchesCategory && matchesDate;
+    });
+
+    // Sorting
+    if (sortOption === 'date-asc') {
+      filteredEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
+    } else if (sortOption === 'date-desc') {
+      filteredEvents.sort((a, b) => new Date(b.date) - new Date(a.date));
+    } else if (sortOption === 'name-asc') {
+      filteredEvents.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortOption === 'name-desc') {
+      filteredEvents.sort((a, b) => b.name.localeCompare(a.name));
+    }
+
+    displayEvents();
+    setupPagination();
+  }
+
+  // Display Events Based on Current Page
+  function displayEvents() {
+    eventsContainer.innerHTML = '';
+
+    const start = (currentPage - 1) * eventsPerPage;
+    const end = start + eventsPerPage;
+    const paginatedEvents = filteredEvents.slice(start, end);
+
+    if (paginatedEvents.length === 0) {
+      eventsContainer.innerHTML = '<p class="text-center">No events found.</p>';
+      return;
+    }
+
+    paginatedEvents.forEach(event => {
+      const eventCard = document.createElement('div');
+      eventCard.classList.add('event-card');
+
+      eventCard.innerHTML = `
+                <img src="${event.image}" alt="${event.name}" loading="lazy">
+                <div class="event-card-body">
+                    <h5 class="event-card-title">${event.name}</h5>
+                    <p class="event-card-text">${event.description.substring(0, 100)}...</p>
+                    <div class="event-card-footer">
+                        <div>
+                            <i class="like-btn ${event.liked ? 'liked' : ''}" data-id="${event.id}" aria-label="Like Event">
+                                <i class="fas fa-heart"></i>
+                            </i>
+                        </div>
+                        <div>
+                            <button class="wishlist-btn" data-id="${event.id}" aria-label="Add to Wishlist">
+                                <i class="fas fa-plus-circle"></i> Wishlist
+                            </button>
+                            <button class="view-btn" data-id="${event.id}" aria-label="View Details">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+      eventsContainer.appendChild(eventCard);
+    });
+  }
+
+  // Setup Pagination Buttons
+  function setupPagination() {
+    paginationContainer.innerHTML = '';
+    const totalPages = Math.ceil(filteredEvents.length / eventsPerPage);
+    if (totalPages <= 1) return;
+
+    // Previous Button
+    const prevBtn = document.createElement('button');
+    prevBtn.textContent = 'Prev';
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        displayEvents();
+        setupPagination();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
+    paginationContainer.appendChild(prevBtn);
+
+    // Page Numbers
+    for (let i = 1; i <= totalPages; i++) {
+      const pageBtn = document.createElement('button');
+      pageBtn.textContent = i;
+      pageBtn.classList.add('page-btn');
+      if (i === currentPage) pageBtn.classList.add('active');
+      pageBtn.addEventListener('click', () => {
+        currentPage = i;
+        displayEvents();
+        setupPagination();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+      paginationContainer.appendChild(pageBtn);
+    }
+
+    // Next Button
+    const nextBtn = document.createElement('button');
+    nextBtn.textContent = 'Next';
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.addEventListener('click', () => {
+      if (currentPage < totalPages) {
+        currentPage++;
+        displayEvents();
+        setupPagination();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
+    paginationContainer.appendChild(nextBtn);
+  }
+
+  // Display Wishlist Events
+  function displayWishlist() {
+    wishlistContainer.innerHTML = '';
+    if (wishlist.length === 0) {
+      wishlistContainer.innerHTML = '<p>Your wishlist is empty.</p>';
+      return;
+    }
+
+    wishlist.forEach(event => {
+      const wishlistCard = document.createElement('div');
+      wishlistCard.classList.add('wishlist-card');
+
+      wishlistCard.innerHTML = `
+                <div>
+                    <h5>${event.name}</h5>
+                    <p><strong>Date:</strong> ${formatDate(event.date)}</p>
+                    <p><strong>Location:</strong> ${event.location}</p>
+                </div>
+                <div>
+                    <button class="remove-btn" data-id="${event.id}" aria-label="Remove from Wishlist">
+                        <i class="fas fa-trash-alt"></i> Remove
+                    </button>
+                    <button class="download-btn" data-id="${event.id}" aria-label="Download Invite">
+                        <i class="fas fa-download"></i> Download Invite
+                    </button>
+                </div>
+            `;
+
+      wishlistContainer.appendChild(wishlistCard);
+    });
+  }
+
+  // Add Event to Wishlist
+  function addToWishlist(eventId) {
+    const event = events.find(e => e.id === eventId);
+    if (!event) return;
+
+    if (wishlist.some(e => e.id === eventId)) {
+      showToast('Event already in wishlist', 'warning');
+      return;
+    }
+
+    wishlist.push(event);
+    localStorage.setItem('wishlist', JSON.stringify(wishlist));
+    displayWishlist();
+    showToast('Event added to wishlist', 'success');
+  }
+
+  // Remove Event from Wishlist
+  function removeFromWishlist(eventId) {
+    wishlist = wishlist.filter(e => e.id !== eventId);
+    localStorage.setItem('wishlist', JSON.stringify(wishlist));
+    displayWishlist();
+    showToast('Event removed from wishlist', 'info');
+  }
+
+  // Toggle Like for Events
+  function toggleLike(eventId) {
+    const event = events.find(e => e.id === eventId);
+    if (!event) return;
+
+    event.liked = !event.liked;
+
+    if (event.liked) {
+      likedEvents.push(eventId);
+      showToast('Event liked', 'success');
+    } else {
+      likedEvents = likedEvents.filter(id => id !== eventId);
+      showToast('Event unliked', 'info');
+    }
+
+    localStorage.setItem('likedEvents', JSON.stringify(likedEvents));
+    displayEvents();
+  }
+
+  // View Event Details in Modal
+  function viewEventDetails(eventId) {
+    const event = events.find(e => e.id === eventId);
+    if (!event) return;
+
+    modalEventImage.src = event.image;
+    modalEventImage.alt = event.name;
+    modalEventName.textContent = event.name;
+    modalEventDate.textContent = formatDate(event.date);
+    modalEventLocation.textContent = event.location;
+    modalEventDescription.textContent = event.description;
+    modalAddWishlistBtn.dataset.id = event.id;
+
+    eventModal.show();
+  }
+
+  // Download Event Invite as PDF using jsPDF
+  function downloadInvite(eventId) {
+    const event = wishlist.find(e => e.id === eventId);
+    if (!event) return;
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Add Logo (Replace 'https://via.placeholder.com/150' with your logo URL)
+    const logoUrl = 'https://via.placeholder.com/150'; // Replace with your logo URL
+    const img = new Image();
+    img.src = logoUrl;
+    img.crossOrigin = 'Anonymous'; // To avoid CORS issues
+    img.onload = function () {
+      doc.addImage(img, 'PNG', 20, 10, 50, 20); // Adjust positioning and size as needed
+
+      // Add Event Details
+      doc.setFontSize(22);
+      doc.setTextColor(40);
+      doc.text('Event Invitation', 105, 30, null, null, 'center');
+
+      doc.setFontSize(16);
+      doc.text(`You're Invited to: ${event.name}`, 20, 60);
+      doc.text(`Date: ${formatDate(event.date)}`, 20, 75);
+      doc.text(`Location: ${event.location}`, 20, 90);
+      doc.text('Description:', 20, 105);
+      doc.setFontSize(14);
+      doc.text(event.description, 20, 115, { maxWidth: 170 });
+
+      doc.save(`${event.name.replace(/\s+/g, '_')}_Invite.pdf`);
+    };
+  }
+
+  // Format Date from YYYY-MM-DD to a Readable Format
+  function formatDate(dateString) {
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    const date = new Date(dateString);
+    return date.toLocaleDateString(undefined, options);
+  }
+
+  // Show Bootstrap Toast
+  function showToast(message, type) {
+    const toastId = `toast-${Date.now()}`;
+    const toastHTML = `
+            <div aria-live="polite" aria-atomic="true" class="toast align-items-center text-bg-${type} border-0" id="${toastId}" role="alert" data-bs-delay="3000">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button aria-label="Close" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" type="button"></button>
+                </div>
+            </div>
+        `;
+    toastContainer.innerHTML += toastHTML;
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement);
+    toast.show();
+
+    // Remove toast from DOM after hidden
+    toastElement.addEventListener('hidden.bs.toast', () => {
+      toastElement.remove();
+    });
+  }
+</script>
+</body>
+</html>

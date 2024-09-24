@@ -44,6 +44,8 @@
             padding: 30px;
             text-align: center;
             display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
         .cup {
@@ -53,7 +55,7 @@
             height: 330px;
             width: 150px;
             border-radius: 0 0 40px 40px;
-            margin: 20px auto;
+            margin: 20px;
             position: relative;
             overflow: hidden;
             transition: all 0.4s ease;
@@ -96,7 +98,7 @@
 
         .cups {
             display: flex;
-            justify-content: space-around;
+            justify-content: center;
             flex-wrap: wrap;
             margin-bottom: 20px;
         }
@@ -105,6 +107,7 @@
             background-color: rgba(255, 255, 255, 0.9);
             border: 2px solid var(--border-color);
             width: 50px;
+            height: 50px;
             border-radius: 10px;
             cursor: pointer;
             font-size: 12px;
@@ -122,7 +125,8 @@
 
         .chart-container {
             width: 100%;
-            margin: 20px 0;
+            max-width: 400px;
+            margin: 20px auto;
         }
 
         .btn {
@@ -141,10 +145,17 @@
             background-color: #5ea5e5;
         }
 
+        .status-message {
+            font-size: 1rem;
+            color: #333;
+            margin-top: 10px;
+        }
+
         .motivational-message {
             font-size: 1rem;
             color: #333;
             margin-top: 20px;
+            width: 200px;
         }
 
         /* Responsive for mobile */
@@ -154,36 +165,38 @@
                 padding: 20px;
             }
         }
-        .motivational-message{
-            width: 200px;
-        }
-
     </style>
 </head>
 <body>
 <div class="container">
     <div>
-    <h1>Drink Water</h1>
-    <h3>Goal: <span id="totalGoal">2 Liters</span></h3>
+        <h1>Drink Water</h1>
+        <h3>Goal: <span id="totalGoal">2 Liters</span></h3>
 
-    <div class="cup" id="bigCup">
-        <div class="percentage" id="percentage"></div>
-        <div class="remained" id="remained">
-            <span id="liters"></span>
-            <small>Remaining</small>
+        <div class="cup" id="bigCup">
+            <div class="percentage" id="percentage"></div>
+            <div class="remained" id="remained">
+                <span id="liters">2.00 L</span>
+                <small>Remaining</small>
+            </div>
         </div>
-    </div>
 
-    <p>Select the number of glasses of water you've drank!</p>
-    <div class="cups" id="smallCupsContainer">
-    </div>
+        <p>Select the number of glasses of water you've drank!</p>
+        <div class="cups" id="smallCupsContainer">
+        </div>
+        <div class="status-message" id="statusMessage"></div>
     </div>
     <div>
-    <div class="chart-container">
-        <canvas id="waterChart"></canvas>
-    </div>
-    <div class="motivational-message" id="motivationalMessage"></div>
+        <div class="chart-container">
+            <canvas id="waterChart"></canvas>
         </div>
+        <div class="motivational-message" id="motivationalMessage"></div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container position-fixed top-0 end-0 p-3">
+    <!-- Toasts will be dynamically generated here -->
 </div>
 
 <script>
@@ -191,12 +204,18 @@
   const liters = document.getElementById("liters");
   const percentage = document.getElementById("percentage");
   const remained = document.getElementById("remained");
+  const statusMessage = document.getElementById("statusMessage");
   const motivationalMessage = document.getElementById("motivationalMessage");
   const waterChart = document.getElementById("waterChart").getContext('2d');
 
   const goal = 2000; // 2 liters in ml
   const cupVolume = 250; // 250 ml per small cup
   let consumedWater = 0;
+
+  // Retrieve consumedWater from localStorage
+  if (localStorage.getItem('consumedWater')) {
+    consumedWater = parseInt(localStorage.getItem('consumedWater'));
+  }
 
   // Generate 8 small cups
   for (let i = 0; i < 8; i++) {
@@ -208,6 +227,19 @@
   }
 
   const smallCups = document.querySelectorAll(".cup-small");
+
+  // Set initial state based on consumedWater
+  function initializeCups() {
+    const fullCups = Math.floor(consumedWater / cupVolume);
+    smallCups.forEach((cup, idx) => {
+      if (idx < fullCups) {
+        cup.classList.add("full");
+      } else {
+        cup.classList.remove("full");
+      }
+    });
+    updateBigCup();
+  }
 
   function highlightCups(idx) {
     if (smallCups[idx].classList.contains("full") && !smallCups[idx].nextElementSibling?.classList.contains("full")) {
@@ -222,12 +254,15 @@
       }
     });
 
+    consumedWater = (idx + 1) * cupVolume;
+    localStorage.setItem('consumedWater', consumedWater);
     updateBigCup();
   }
 
   function updateBigCup() {
     const fullCups = document.querySelectorAll(".cup-small.full").length;
     consumedWater = fullCups * cupVolume;
+    localStorage.setItem('consumedWater', consumedWater);
 
     if (fullCups === 0) {
       percentage.style.visibility = "hidden";
@@ -242,12 +277,12 @@
     if (fullCups === smallCups.length) {
       remained.style.visibility = "hidden";
       remained.style.height = 0;
-      motivationalMessage.innerText = "Awesome! You reached your daily goal!";
+      statusMessage.innerText = "Awesome! You reached your daily goal!";
     } else {
       remained.style.visibility = "visible";
       const remainingLiters = (goal - consumedWater) / 1000;
       liters.innerText = `${remainingLiters.toFixed(2)} L`;
-      motivationalMessage.innerText = remainingLiters <= 1 ? "You're almost there, keep going!" : "Keep drinking to reach your goal!";
+      statusMessage.innerText = remainingLiters <= 1 ? "You're almost there, keep going!" : "";
     }
 
     updateChart();
@@ -296,13 +331,44 @@
   }
 
   async function fetchMotivationalMessage() {
-    const response = await fetch('https://cors-anywhere.herokuapp.com/https://zenquotes.io/api/random');
-    const data = await response.json();
-    const motivationalMessage = document.getElementById('motivationalMessage');
-    motivationalMessage.innerText = data[0].q + " — " + data[0].a;
+    try {
+      const response = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://zenquotes.io/api/random'));
+      const data = await response.json();
+      if (data && data[0] && data[0].q && data[0].a) {
+        motivationalMessage.innerText = `"${data[0].q}" — ${data[0].a}`;
+      } else {
+        motivationalMessage.innerText = "Stay hydrated and have a great day!";
+      }
+    } catch (error) {
+      motivationalMessage.innerText = "Stay hydrated and have a great day!";
+    }
   }
-  updateBigCup();
+  initializeCups();
   fetchMotivationalMessage();
+
+  // Toast Function
+  function showToast(message, type) {
+    const toastId = `toast-${Date.now()}`;
+    const toastHTML = `
+      <div aria-live="polite" aria-atomic="true" class="toast align-items-center text-bg-${type} border-0" id="${toastId}" role="alert" data-bs-delay="3000">
+        <div class="d-flex">
+          <div class="toast-body">
+            ${message}
+          </div>
+          <button aria-label="Close" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" type="button"></button>
+        </div>
+      </div>
+    `;
+    const toastContainer = document.querySelector('.toast-container');
+    toastContainer.innerHTML += toastHTML;
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement);
+    toast.show();
+
+    toastElement.addEventListener('hidden.bs.toast', () => {
+      toastElement.remove();
+    });
+  }
 </script>
 </body>
 </html>
