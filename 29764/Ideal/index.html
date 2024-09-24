@@ -4,13 +4,9 @@
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Event Manager</title>
-    <!-- Bootstrap CSS for Responsive Design -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome for Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Custom Styles -->
     <style>
-        /* Custom Styles */
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
             background-color: #f9fafb;
@@ -33,7 +29,6 @@
             text-align: center;
         }
 
-        /* Search and Filter Styles */
         .search-filter-container {
             display: flex;
             flex-wrap: wrap;
@@ -48,14 +43,12 @@
             max-width: 300px;
         }
 
-        /* Event Cards Grid */
         .cards-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 20px;
         }
 
-        /* Event Card Styles */
         .event-card {
             background-color: #fff;
             border-radius: 10px;
@@ -120,6 +113,7 @@
             cursor: pointer;
             font-size: 14px;
             transition: background-color 0.3s;
+            margin-left: 5px;
         }
 
         .wishlist-btn {
@@ -141,7 +135,6 @@
             background-color: #5a6268;
         }
 
-        /* Wishlist Styles */
         .wishlist {
             background-color: #fff;
             padding: 25px;
@@ -203,7 +196,6 @@
             background-color: #218838;
         }
 
-        /* Pagination Styles */
         .pagination-container {
             display: flex;
             justify-content: center;
@@ -230,36 +222,27 @@
             background-color: #ced4da;
         }
 
-        /* Modal Styles */
         .modal-header {
             background-color: #007bff;
             color: #fff;
         }
 
-        /* Toast Styles */
         .toast-container {
             position: fixed;
             top: 20px;
             right: 20px;
             z-index: 1055;
         }
-
-        /* Logo in PDF */
-        /* Add your logo URL here */
-        /* This will be used in the downloadInvite function */
     </style>
 </head>
 <body>
 <div class="container">
-    <!-- Event List -->
     <section class="event-list">
         <h2>Explore Events</h2>
-        <!-- Search and Filters -->
         <div class="search-filter-container">
             <input aria-label="Search events" class="form-control" id="search-input" placeholder="Search events..." type="text">
             <select aria-label="Filter by location" class="form-select" id="filter-location">
                 <option value="">All Locations</option>
-                <!-- Dynamically populated -->
             </select>
             <select aria-label="Filter by date" class="form-select" id="filter-date">
                 <option value="">All Dates</option>
@@ -268,7 +251,6 @@
             </select>
             <select aria-label="Filter by category" class="form-select" id="filter-category">
                 <option value="">All Categories</option>
-                <!-- Dynamically populated -->
             </select>
             <select aria-label="Sort events" class="form-select" id="sort-events">
                 <option value="">Sort By</option>
@@ -278,20 +260,16 @@
                 <option value="name-desc">Name: Z to A</option>
             </select>
         </div>
-        <!-- Events Container -->
         <div class="cards-container" id="events-container"></div>
-        <!-- Pagination -->
         <div class="pagination-container" id="pagination-container"></div>
     </section>
 
-    <!-- Wishlist -->
     <section class="wishlist">
         <h2>Your Wishlist</h2>
         <div id="wishlist-container"></div>
     </section>
 </div>
 
-<!-- Event Details Modal -->
 <div aria-hidden="true" aria-labelledby="eventModalLabel" class="modal fade" id="eventModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
@@ -314,19 +292,13 @@
     </div>
 </div>
 
-<!-- Toast Container -->
 <div class="toast-container position-fixed top-0 end-0 p-3">
-    <!-- Toasts will be dynamically generated here -->
 </div>
 
-<!-- jsPDF Library for PDF Generation -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
-<!-- Bootstrap JS for Modal and Responsive Behavior -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<!-- Font Awesome JS for Icons -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 <script>
-  // Sample array of events with images, descriptions, and categories
   const events = [
     { id: 1, name: 'Music Concert', date: '2024-10-05', location: 'New York', description: 'Join us for an unforgettable night of live music featuring top artists.', image: 'https://via.placeholder.com/400x250?text=Music+Concert', category: 'Music', liked: false },
     { id: 2, name: 'Tech Conference', date: '2024-11-12', location: 'San Francisco', description: 'Explore the latest advancements in technology and network with industry leaders.', image: 'https://via.placeholder.com/400x250?text=Tech+Conference', category: 'Technology', liked: false },
@@ -338,10 +310,8 @@
     { id: 8, name: 'Marathon', date: '2024-10-22', location: 'Boston', description: 'Challenge yourself in one of the most historic marathons in the world.', image: 'https://via.placeholder.com/400x250?text=Marathon', category: 'Sports', liked: false },
     { id: 9, name: 'Startup Meetup', date: '2024-11-05', location: 'Austin', description: 'Connect with entrepreneurs and investors in the thriving startup ecosystem.', image: 'https://via.placeholder.com/400x250?text=Startup+Meetup', category: 'Business', liked: false },
     { id: 10, name: 'Dance Workshop', date: '2024-12-10', location: 'Rio de Janeiro', description: 'Learn new dance styles from professional instructors in a fun environment.', image: 'https://via.placeholder.com/400x250?text=Dance+Workshop', category: 'Dance', liked: false },
-    // Add more events as needed
   ];
 
-  // Get DOM Elements
   const eventsContainer = document.getElementById('events-container');
   const wishlistContainer = document.getElementById('wishlist-container');
   const searchInput = document.getElementById('search-input');
@@ -352,7 +322,6 @@
   const paginationContainer = document.getElementById('pagination-container');
   const toastContainer = document.querySelector('.toast-container');
 
-  // Modal Elements
   const eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
   const modalEventImage = document.getElementById('modal-event-image');
   const modalEventName = document.getElementById('modal-event-name');
@@ -361,18 +330,14 @@
   const modalEventDescription = document.getElementById('modal-event-description');
   const modalAddWishlistBtn = document.getElementById('modal-add-wishlist-btn');
 
-  // Wishlist stored in localStorage
   let wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
 
-  // Liked events stored in localStorage
   let likedEvents = JSON.parse(localStorage.getItem('likedEvents')) || [];
 
-  // Pagination Variables
   let currentPage = 1;
   const eventsPerPage = 8;
   let filteredEvents = [...events];
 
-  // Initialize Application
   document.addEventListener('DOMContentLoaded', () => {
     populateLocationFilter();
     populateCategoryFilter();
@@ -382,7 +347,6 @@
     displayWishlist();
   });
 
-  // Populate Location Filter Dynamically
   function populateLocationFilter() {
     const locations = [...new Set(events.map(event => event.location))].sort();
     locations.forEach(location => {
@@ -393,7 +357,6 @@
     });
   }
 
-  // Populate Category Filter Dynamically
   function populateCategoryFilter() {
     const categories = [...new Set(events.map(event => event.category))].sort();
     categories.forEach(category => {
@@ -404,7 +367,6 @@
     });
   }
 
-  // Load Liked Events from localStorage
   function loadLikedEvents() {
     likedEvents.forEach(eventId => {
       const event = events.find(e => e.id === eventId);
@@ -414,7 +376,6 @@
     });
   }
 
-  // Setup Event Listeners
   function setupEventListeners() {
     searchInput.addEventListener('input', () => {
       currentPage = 1;
@@ -440,7 +401,6 @@
       applyFilters();
     });
 
-    // Wishlist Event Delegation
     wishlistContainer.addEventListener('click', (e) => {
       if (e.target.closest('.remove-btn')) {
         const eventId = parseInt(e.target.closest('.remove-btn').dataset.id);
@@ -451,7 +411,6 @@
       }
     });
 
-    // Events Container Event Delegation
     eventsContainer.addEventListener('click', (e) => {
       if (e.target.closest('.like-btn')) {
         const eventId = parseInt(e.target.closest('.like-btn').dataset.id);
@@ -465,7 +424,6 @@
       }
     });
 
-    // Modal Add to Wishlist Button
     modalAddWishlistBtn.addEventListener('click', () => {
       const eventId = parseInt(modalAddWishlistBtn.dataset.id);
       addToWishlist(eventId);
@@ -473,7 +431,6 @@
     });
   }
 
-  // Apply Filters and Search
   function applyFilters() {
     const query = searchInput.value.toLowerCase();
     const location = filterLocation.value;
@@ -490,7 +447,7 @@
       const matchesDate = (() => {
         const eventDate = new Date(event.date);
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // Reset time for accurate comparison
+        today.setHours(0, 0, 0, 0);
         if (dateFilter === 'upcoming') {
           return eventDate >= today;
         } else if (dateFilter === 'past') {
@@ -501,7 +458,6 @@
       return matchesQuery && matchesLocation && matchesCategory && matchesDate;
     });
 
-    // Sorting
     if (sortOption === 'date-asc') {
       filteredEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
     } else if (sortOption === 'date-desc') {
@@ -516,7 +472,6 @@
     setupPagination();
   }
 
-  // Display Events Based on Current Page
   function displayEvents() {
     eventsContainer.innerHTML = '';
 
@@ -560,13 +515,11 @@
     });
   }
 
-  // Setup Pagination Buttons
   function setupPagination() {
     paginationContainer.innerHTML = '';
     const totalPages = Math.ceil(filteredEvents.length / eventsPerPage);
     if (totalPages <= 1) return;
 
-    // Previous Button
     const prevBtn = document.createElement('button');
     prevBtn.textContent = 'Prev';
     prevBtn.disabled = currentPage === 1;
@@ -580,7 +533,6 @@
     });
     paginationContainer.appendChild(prevBtn);
 
-    // Page Numbers
     for (let i = 1; i <= totalPages; i++) {
       const pageBtn = document.createElement('button');
       pageBtn.textContent = i;
@@ -595,7 +547,6 @@
       paginationContainer.appendChild(pageBtn);
     }
 
-    // Next Button
     const nextBtn = document.createElement('button');
     nextBtn.textContent = 'Next';
     nextBtn.disabled = currentPage === totalPages;
@@ -610,7 +561,6 @@
     paginationContainer.appendChild(nextBtn);
   }
 
-  // Display Wishlist Events
   function displayWishlist() {
     wishlistContainer.innerHTML = '';
     if (wishlist.length === 0) {
@@ -642,7 +592,6 @@
     });
   }
 
-  // Add Event to Wishlist
   function addToWishlist(eventId) {
     const event = events.find(e => e.id === eventId);
     if (!event) return;
@@ -658,7 +607,6 @@
     showToast('Event added to wishlist', 'success');
   }
 
-  // Remove Event from Wishlist
   function removeFromWishlist(eventId) {
     wishlist = wishlist.filter(e => e.id !== eventId);
     localStorage.setItem('wishlist', JSON.stringify(wishlist));
@@ -666,7 +614,6 @@
     showToast('Event removed from wishlist', 'info');
   }
 
-  // Toggle Like for Events
   function toggleLike(eventId) {
     const event = events.find(e => e.id === eventId);
     if (!event) return;
@@ -685,7 +632,6 @@
     displayEvents();
   }
 
-  // View Event Details in Modal
   function viewEventDetails(eventId) {
     const event = events.find(e => e.id === eventId);
     if (!event) return;
@@ -701,47 +647,16 @@
     eventModal.show();
   }
 
-  // Download Event Invite as PDF using jsPDF
   function downloadInvite(eventId) {
-    const event = wishlist.find(e => e.id === eventId);
-    if (!event) return;
-
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-
-    // Add Logo (Replace 'https://via.placeholder.com/150' with your logo URL)
-    const logoUrl = 'https://via.placeholder.com/150'; // Replace with your logo URL
-    const img = new Image();
-    img.src = logoUrl;
-    img.crossOrigin = 'Anonymous'; // To avoid CORS issues
-    img.onload = function () {
-      doc.addImage(img, 'PNG', 20, 10, 50, 20); // Adjust positioning and size as needed
-
-      // Add Event Details
-      doc.setFontSize(22);
-      doc.setTextColor(40);
-      doc.text('Event Invitation', 105, 30, null, null, 'center');
-
-      doc.setFontSize(16);
-      doc.text(`You're Invited to: ${event.name}`, 20, 60);
-      doc.text(`Date: ${formatDate(event.date)}`, 20, 75);
-      doc.text(`Location: ${event.location}`, 20, 90);
-      doc.text('Description:', 20, 105);
-      doc.setFontSize(14);
-      doc.text(event.description, 20, 115, { maxWidth: 170 });
-
-      doc.save(`${event.name.replace(/\s+/g, '_')}_Invite.pdf`);
-    };
+    alert("Feature not yet implemented");
   }
 
-  // Format Date from YYYY-MM-DD to a Readable Format
   function formatDate(dateString) {
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     const date = new Date(dateString);
     return date.toLocaleDateString(undefined, options);
   }
 
-  // Show Bootstrap Toast
   function showToast(message, type) {
     const toastId = `toast-${Date.now()}`;
     const toastHTML = `
@@ -759,7 +674,6 @@
     const toast = new bootstrap.Toast(toastElement);
     toast.show();
 
-    // Remove toast from DOM after hidden
     toastElement.addEventListener('hidden.bs.toast', () => {
       toastElement.remove();
     });

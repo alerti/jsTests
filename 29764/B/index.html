@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Event Manager</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Arial', sans-serif; }
+        .event-card { margin: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; }
+        .event-image { width: 100%; border-radius: 4px; }
+        .wishlist-icon, .like-icon { cursor: pointer; }
+        .pagination { justify-content: center; }
+        @media (max-width: 768px) {
+            .event-card { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Event Explorer</h1>
+    <!-- Search and Filters -->
+    <div class="mb-3">
+        <input class="form-control" id="searchInput" placeholder="Search events..." type="text">
+        <select class="form-control mt-2" id="filterLocation">
+            <option value="">All Locations</option>
+            <!-- Options will be populated dynamically -->
+        </select>
+        <select class="form-control mt-2" id="filterCategory">
+            <option value="">All Categories</option>
+        </select>
+    </div>
+
+    <!-- Events Section -->
+    <div id="eventsSection"></div>
+
+    <!-- Pagination -->
+    <nav aria-label="Event pagination">
+        <ul class="pagination" id="pagination"></ul>
+    </nav>
+
+    <!-- Wishlist Section -->
+    <h2>Wishlist</h2>
+    <div id="wishlistSection"></div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+  $(document).ready(function() {
+    const events = []; // Assume events are loaded here
+    let currentPage = 1;
+    const eventsPerPage = 6;
+
+    function displayEvents(page) {
+      $('#eventsSection').empty();
+      const start = (page - 1) * eventsPerPage;
+      const end = start + eventsPerPage;
+      const paginatedEvents = events.slice(start, end);
+
+      paginatedEvents.forEach(event => {
+        const card = `
+            <div class="col-md-4">
+                <div class="card event-card">
+                    <img src="${event.image}" class="card-img-top event-image" alt="${event.name}">
+                    <div class="card-body">
+                        <h5 class="card-title">${event.name}</h5>
+                        <p><strong>Date:</strong> ${event.date}</p>
+                        <p><strong>Location:</strong> ${event.location}</p>
+                        <button class="btn btn-info" onclick="alert('View Details: Not implemented')">Details</button>
+                        <span class="wishlist-icon" onclick="toggleWishlist(${event.id})">&#9825;</span>
+                        <span class="like-icon" onclick="alert('Like: Not implemented')">&#10084;</span>
+                    </div>
+                </div>
+            </div>`;
+        $('#eventsSection').append(card);
+      });
+
+      updatePagination();
+    }
+
+    function updatePagination() {
+      const pageCount = Math.ceil(events.length / eventsPerPage);
+      $('#pagination').empty();
+      for(let i = 1; i <= pageCount; i++) {
+        $('#pagination').append(`<li class="page-item ${i === currentPage ? 'active' : ''}"><a class="page-link" href="#" onclick="changePage(${i})">${i}</a></li>`);
+      }
+    }
+
+    function changePage(page) {
+      currentPage = page;
+      displayEvents(currentPage);
+    }
+
+    function toggleWishlist(eventId) {
+      // Logic to toggle event in wishlist, update UI or local storage
+      console.log('Adding/Removing event with ID:', eventId);
+    }
+
+    // Initial load
+    displayEvents(currentPage);
+
+    // Dummy event population for demonstration
+    for(let i = 1; i <= 20; i++) {
+      events.push({id: i, name: `Event ${i}`, date: '2023-10-10', location: `Location ${i}`, image: 'path_to_image.jpg'});
+    }
+
+    // Setup filters (you would dynamically populate these from your events)
+    ['New York', 'London', 'Tokyo'].forEach(loc => $('#filterLocation').append(new Option(loc, loc)));
+    ['Music', 'Sports', 'Conference'].forEach(cat => $('#filterCategory').append(new Option(cat, cat)));
+  });
+</script>
+
+</body>
+</html>
