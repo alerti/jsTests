@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Code Playground</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/codemirror.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/theme/material.min.css" rel="stylesheet">
+    <style>
+        .CodeMirror { height: auto; }
+        #resultFrame { width: 100%; height: 300px; border: 1px solid #ddd; }
+        .tab-content { margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="container mt-5">
+    <ul class="nav nav-tabs" id="codeTabs" role="tablist">
+        <li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#js" id="js-tab" role="tab">JavaScript</a></li>
+        <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#html" id="html-tab" role="tab">HTML</a></li>
+        <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#css" id="css-tab" role="tab">CSS</a></li>
+    </ul>
+
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="js" role="tabpanel"><textarea id="jsEditor"></textarea></div>
+        <div class="tab-pane fade" id="html" role="tabpanel"><textarea id="htmlEditor"></textarea></div>
+        <div class="tab-pane fade" id="css" role="tabpanel"><textarea id="cssEditor"></textarea></div>
+    </div>
+
+    <button class="btn btn-primary mt-2" onclick="runCode()">Run Code</button>
+    <div class="mt-3" id="result"></div>
+    <iframe class="mt-3" id="resultFrame" style="display:none;"></iframe>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/mode/xml/xml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/mode/css/css.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+<script>
+  const editors = {};
+  const templates = {
+    js: 'console.log("Hello, World!");',
+    html: '<h1>Welcome to HTML</h1>',
+    css: 'body { background-color: lightblue; }'
+  };
+
+  ['js', 'html', 'css'].forEach(lang => {
+    editors[lang] = CodeMirror.fromTextArea(document.getElementById(`${lang}Editor`), {
+      lineNumbers: true,
+      mode: lang,
+      theme: 'material'
+    });
+    editors[lang].setValue(templates[lang]);
+  });
+
+  function runCode() {
+    const currentTab = document.querySelector('.nav-link.active').id.split('-')[0];
+    const code = editors[currentTab].getValue();
+    const resultDiv = document.getElementById('result');
+    const resultFrame = document.getElementById('resultFrame');
+
+    if (currentTab === 'js') {
+      resultFrame.style.display = 'none';
+      resultDiv.style.display = 'block';
+      try {
+        let output = eval(code);
+        resultDiv.innerHTML = output !== undefined ? output : "No output";
+        Toastify({
+          text: "JavaScript executed successfully!",
+          duration: 3000,
+          gravity: "top",
+          position: "right",
+          backgroundColor: "green"
+        }).showToast();
+      } catch (e) {
+        resultDiv.innerHTML = e;
+        Toastify({
+          text: "Error in execution!",
+          duration: 3000,
+          gravity: "top",
+          position: "right",
+          backgroundColor: "red"
+        }).showToast();
+      }
+    } else if (currentTab === 'html' || currentTab === 'css') {
+      resultDiv.style.display = 'none';
+      resultFrame.style.display = 'block';
+      const combinedHTML = `<style>${editors['css'].getValue()}</style>${editors['html'].getValue()}`;
+      resultFrame.srcdoc = combinedHTML;
+      Toastify({
+        text: "HTML/CSS rendered successfully!",
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        backgroundColor: "green"
+      }).showToast();
+    }
+  }
+</script>
+
+</body>
+</html>

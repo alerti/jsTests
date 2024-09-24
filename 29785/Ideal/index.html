@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Multi-Language JavaScript Playground</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
+        .editor-container {
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            background-color: #fff;
+            padding: 15px;
+            height: 300px;
+            overflow: auto;
+            font-family: 'Courier New', Courier, monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        #console {
+            background-color: #343a40;
+            color: #28a745;
+            padding: 15px;
+            height: 150px;
+            overflow-y: auto;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        #visualizer {
+            background-color: #fff;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            padding: 15px;
+            height: 200px;
+            overflow: auto;
+        }
+        .template-card {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .template-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .template-card.selected {
+            border: 2px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1 class="text-center mb-4">Code Playground</h1>
+
+    <!-- Language and Template Selection -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-2">
+            <label class="form-label" for="languageSelect">Select Language:</label>
+            <select class="form-select" id="languageSelect">
+                <option selected value="javascript">JavaScript</option>
+                <option value="html">HTML</option>
+                <option value="css">CSS</option>
+            </select>
+        </div>
+        <div class="col-md-6 mb-2">
+            <label class="form-label" for="templateSelect">Select Template:</label>
+            <select class="form-select" id="templateSelect"></select>
+        </div>
+    </div>
+
+    <!-- Run Button -->
+    <div class="d-grid gap-2 mb-4">
+        <button class="btn btn-primary" id="runCode"><i class="fas fa-play"></i> Run Code</button>
+    </div>
+
+    <!-- Code Editor -->
+    <h5>Code Editor</h5>
+    <div class="editor-container" id="editor">
+        <!-- Selected template code will appear here -->
+    </div>
+
+    <!-- Console Output and Visualizer -->
+    <div class="row mt-4">
+        <div class="col-md-6 mb-4">
+            <h5>Console Output</h5>
+            <div id="console"></div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <h5>Visualizer</h5>
+            <div id="visualizer"></div>
+        </div>
+    </div>
+
+    <!-- Template Presets Display -->
+    <h2 class="mt-5">Learn</h2>
+    <div class="row" id="templatePresets">
+        <!-- Template cards will be generated here -->
+    </div>
+</div>
+
+<!-- Toast Notifications -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <!-- Toasts will be added dynamically -->
+</div>
+
+<!-- Bootstrap JS Bundle (Includes Popper) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Font Awesome JS for Icons -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+<script>
+  const templates = {
+    javascript: [
+      { name: "Hello World", code: `console.log("Hello, World!");` },
+      { name: "Create Circle", code: `console.log("Creating a Circle"); createCircle();` },
+      { name: "Simple Math", code: `let sum = 5 + 10;\nconsole.log("Sum:", sum);` },
+      { name: "Loop Example", code: `for (let i = 1; i <= 5; i++) {\n    console.log("Number:", i);\n}` },
+      { name: "Date Example", code: `let today = new Date();\nconsole.log("Today's Date:", today);` }
+    ],
+    html: [
+      { name: "Basic HTML", code: `<h1>Hello, World!</h1>` },
+      { name: "Button with Alert", code: `<button onclick="alert('Button Clicked!')">Click Me!</button>` },
+      { name: "Image Display", code: `<img src="https://via.placeholder.com/150" alt="Sample Image">` },
+      { name: "Form Example", code: `<form>\n    <input type="text" placeholder="Enter Name">\n    <button type="submit">Submit</button>\n</form>` },
+      { name: "Link Example", code: `<a href="https://www.turing.com" target="_blank">Visit a site</a>` }
+    ],
+    css: [
+      { name: "Basic Style", code: `body {\n    background-color: #e0f7fa;\n}` },
+      { name: "Text Style", code: `h1 {\n    color: #d32f2f;\n    font-size: 36px;\n}` },
+      { name: "Button Style", code: `button {\n    background-color: #1976d2;\n    color: white;\n    padding: 10px 20px;\n    border: none;\n    border-radius: 5px;\n}` },
+      { name: "Div Style", code: `#visualizer {\n    display: flex;\n    justify-content: center;\n    align-items: center;\n}` },
+      { name: "Hover Effect", code: `button:hover {\n    background-color: #1565c0;\n}` }
+    ]
+  };
+
+  const languageSelect = document.getElementById('languageSelect');
+  const templateSelect = document.getElementById('templateSelect');
+  const runButton = document.getElementById('runCode');
+  const editor = document.getElementById('editor');
+  const consoleDiv = document.getElementById('console');
+  const visualizerDiv = document.getElementById('visualizer');
+  const toastContainer = document.querySelector('.toast-container');
+  const templatePresets = document.getElementById('templatePresets');
+
+  // Initialize templates dropdown
+  function populateTemplates() {
+    const selectedLanguage = languageSelect.value;
+    templateSelect.innerHTML = '';
+    templates[selectedLanguage].forEach((template, index) => {
+      const option = document.createElement('option');
+      option.value = index;
+      option.textContent = template.name;
+      templateSelect.appendChild(option);
+    });
+    loadTemplateCode(0);
+  }
+
+  // Load code into editor based on selected template
+  function loadTemplateCode(index) {
+    const selectedLanguage = languageSelect.value;
+    const selectedTemplate = templates[selectedLanguage][index];
+    editor.textContent = selectedTemplate.code;
+  }
+
+  // Capture console.log output
+  (function() {
+    const originalLog = console.log;
+    console.log = function(message, ...optionalParams) {
+      originalLog.apply(console, arguments);
+      const msg = [message, ...optionalParams].join(' ');
+      consoleDiv.innerHTML += `${msg}<br>`;
+    };
+  })();
+
+  // Run Code Button Click Event
+  runButton.addEventListener('click', () => {
+    clearConsole();
+    clearVisualizer();
+    const selectedLanguage = languageSelect.value;
+    const selectedTemplateIndex = templateSelect.value;
+    const code = templates[selectedLanguage][selectedTemplateIndex].code;
+
+    if (selectedLanguage === 'javascript') {
+      try {
+        const func = new Function(code);
+        func();
+        showToast('JavaScript code executed successfully!', 'success');
+      } catch (err) {
+        consoleDiv.innerHTML += `<span style="color: red;">Error: ${err.message}</span><br>`;
+        showToast('Error executing JavaScript code.', 'danger');
+      }
+    } else if (selectedLanguage === 'html') {
+      visualizerDiv.innerHTML = code;
+      showToast('HTML code rendered successfully!', 'success');
+    } else if (selectedLanguage === 'css') {
+      applyCSS(code);
+      showToast('CSS code applied successfully!', 'success');
+    }
+  });
+
+  // Clear Console Output
+  function clearConsole() {
+    consoleDiv.innerHTML = '';
+  }
+
+  // Clear Visualizer Output
+  function clearVisualizer() {
+    visualizerDiv.innerHTML = '';
+  }
+
+  // Apply CSS Code
+  function applyCSS(cssCode) {
+    let styleTag = document.getElementById('dynamicStyle');
+    if (!styleTag) {
+      styleTag = document.createElement('style');
+      styleTag.id = 'dynamicStyle';
+      document.head.appendChild(styleTag);
+    }
+    styleTag.innerHTML = cssCode;
+  }
+
+  // Show Toast Notification
+  function showToast(message, type) {
+    const toastId = `toast-${Date.now()}`;
+    const toastHTML = `
+            <div id="${toastId}" class="toast align-items-center text-bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        `;
+    toastContainer.innerHTML += toastHTML;
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement);
+    toast.show();
+
+    toastElement.addEventListener('hidden.bs.toast', () => {
+      toastElement.remove();
+    });
+  }
+
+  // Generate Template Presets Cards
+  function generateTemplateCards() {
+    let count = 0;
+    for (let lang in templates) {
+      templates[lang].forEach(template => {
+        const col = document.createElement('div');
+        col.className = 'col-md-4 mb-4';
+
+        const card = document.createElement('div');
+        card.className = 'card template-card';
+        card.dataset.language = lang;
+        card.dataset.index = templates[lang].indexOf(template);
+
+        const cardBody = document.createElement('div');
+        cardBody.className = 'card-body';
+
+        const cardTitle = document.createElement('h5');
+        cardTitle.className = 'card-title';
+        cardTitle.textContent = `${capitalize(lang)}: ${template.name}`;
+
+        const runBtn = document.createElement('button');
+        runBtn.className = 'btn btn-sm btn-primary mt-2';
+        runBtn.innerHTML = '<i class="fas fa-play"></i> Run';
+        runBtn.addEventListener('click', () => {
+          // Select language and template in dropdowns
+          languageSelect.value = lang;
+          populateTemplates();
+          templateSelect.value = templates[lang].indexOf(template);
+          loadTemplateCode(templateSelect.value);
+          runButton.click();
+        });
+
+        cardBody.appendChild(cardTitle);
+        cardBody.appendChild(runBtn);
+        card.appendChild(cardBody);
+        col.appendChild(card);
+        templatePresets.appendChild(col);
+
+        count++;
+      });
+    }
+  }
+
+  // Capitalize first letter
+  function capitalize(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
+  // Event Listener for Language Selection Change
+  languageSelect.addEventListener('change', populateTemplates);
+
+  // Initialize on DOM Content Loaded
+  document.addEventListener('DOMContentLoaded', () => {
+    populateTemplates();
+    generateTemplateCards();
+  });
+
+  // Example: Append visual elements dynamically for visualization
+  function createCircle() {
+    const circle = document.createElement('div');
+    circle.style.width = '100px';
+    circle.style.height = '100px';
+    circle.style.borderRadius = '50%';
+    circle.style.backgroundColor = 'blue';
+    circle.style.margin = '20px auto';
+    visualizerDiv.appendChild(circle);
+  }
+</script>
+
+</body>
+</html>

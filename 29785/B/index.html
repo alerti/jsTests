@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Interactive Code Playground</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; }
+        #editor { height: 300px; }
+        #output { width: 100%; height: 200px; border: 1px solid #ccc; }
+        .toast-container { position: fixed; top: 10px; right: 10px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Code Playground</h1>
+    <ul class="nav nav-tabs" id="codeTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" data-bs-target="#js" data-bs-toggle="tab" id="js-tab" role="tab" type="button">JavaScript</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-target="#html" data-bs-toggle="tab" id="html-tab" role="tab" type="button">HTML</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-target="#css" data-bs-toggle="tab" id="css-tab" role="tab" type="button">CSS</button>
+        </li>
+    </ul>
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="js" role="tabpanel">
+            <select class="form-select mb-2" id="jsTemplates">
+                <option value="helloWorld">Hello World</option>
+            </select>
+            <div id="editorJS"></div>
+        </div>
+        <div class="tab-pane fade" id="html" role="tabpanel">
+            <select class="form-select mb-2" id="htmlTemplates">
+                <option value="basicHTML">Basic HTML</option>
+            </select>
+            <div id="editorHTML"></div>
+        </div>
+        <div class="tab-pane fade" id="css" role="tabpanel">
+            <select class="form-select mb-2" id="cssTemplates">
+                <option value="simpleCSS">Simple CSS</option>
+            </select>
+            <div id="editorCSS"></div>
+        </div>
+    </div>
+    <button class="btn btn-primary mt-2" onclick="runCode()">Run Code</button>
+    <div class="mt-2" id="output"></div>
+</div>
+
+<div class="toast-container">
+    <div aria-atomic="true" aria-live="assertive" class="toast" id="liveToast" role="alert">
+        <div class="toast-body">
+            Hello, world! This is a toast message.
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  $(document).ready(function() {
+    let editors = {
+      js: ace.edit("editorJS", {
+        mode: "ace/mode/javascript",
+        theme: "ace/theme/monokai"
+      }),
+      html: ace.edit("editorHTML", {
+        mode: "ace/mode/html",
+        theme: "ace/theme/monokai"
+      }),
+      css: ace.edit("editorCSS", {
+        mode: "ace/mode/css",
+        theme: "ace/theme/monokai"
+      })
+    };
+
+    // Template selection
+    $('#jsTemplates, #htmlTemplates, #cssTemplates').on('change', function() {
+      const type = this.id.replace('Templates', '');
+      const template = $(this).val();
+      editors[type].setValue(getTemplate(type, template), -1);
+    });
+
+    function getTemplate(type, name) {
+      const templates = {
+        js: { helloWorld: 'console.log("Hello, World!");' },
+        html: { basicHTML: '<!DOCTYPE html>\n<html>\n<body>\n\n<h1>Hello World</h1>\n\n</body>\n</html>' },
+        css: { simpleCSS: 'body { background-color: lightblue; }' }
+      };
+      return templates[type][name] || '';
+    }
+
+    window.runCode = function() {
+      const activeTab = $('.nav-link.active').attr('id').split('-')[0];
+      const code = editors[activeTab].getValue();
+
+      if (activeTab === 'js') {
+        try {
+          let output = document.getElementById('output');
+          output.contentWindow.document.body.innerHTML = ''; // Clear previous output
+          let script = document.createElement('script');
+          script.text = code;
+          output.contentWindow.document.body.appendChild(script);
+          showToast('Code executed successfully');
+        } catch (e) {
+          showToast('Error: ' + e.message, true);
+        }
+      } else {
+        document.getElementById('output').srcdoc = (activeTab === 'html' ? code : `<style>${code}</style>`) + '<body></body>';
+        showToast('Rendered successfully');
+      }
+    };
+
+    function showToast(message, isError = false) {
+      const toast = new bootstrap.Toast(document.getElementById('liveToast'));
+      $('.toast-body').text(message);
+      if (isError) $('.toast').addClass('bg-danger text-white');
+      else $('.toast').removeClass('bg-danger text-white');
+      toast.show();
+    }
+  });
+
+  // Setup iframe for output
+  document.getElementById('output').onload = function() {
+    this.contentWindow.console.log = function(...args) {
+      const logArea = document.createElement('div');
+      logArea.textContent = args.join(' ');
+      this.document.body.appendChild(logArea);
+    };
+  };
+</script>
+</body>
+</html>
