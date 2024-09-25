@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>3D Rubik's Cube</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.6.0/gsap.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #gameCanvas { width: 100vw; height: 100vh; display: block; }
+        #controls { position: absolute; bottom: 10px; width: 100%; text-align: center; }
+        button, #stats { margin: 5px; padding: 10px; font-size: 16px; }
+    </style>
+</head>
+<body>
+<div id="gameCanvas"></div>
+<div id="controls">
+    <button onclick="scrambleCube()">Scramble</button>
+    <button onclick="resetCube()">Reset</button>
+    <div id="stats">Moves: <span id="moveCount">0</span> Time: <span id="timer">00:00</span></div>
+</div>
+
+<script>
+  // Three.js setup
+  let scene, camera, renderer, cube, controls;
+  let isDragging = false, dragStart = new THREE.Vector2();
+  let moveCount = 0, timer, timeElapsed = 0, isGameActive = false;
+
+  function init() {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById('gameCanvas').appendChild(renderer.domElement);
+
+    // Cube creation logic here with Three.js
+    // ...
+
+    camera.position.z = 5;
+
+    // Orbit controls for rotation
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.25;
+    controls.enableZoom = false;
+
+    // Animation loop
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      if(isGameActive) updateTimer();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // Event listeners for cube manipulation
+    renderer.domElement.addEventListener('mousedown', onMouseDown, false);
+    renderer.domElement.addEventListener('mousemove', onMouseMove, false);
+    renderer.domElement.addEventListener('mouseup', onMouseUp, false);
+    // Touch events would need to be handled similarly for mobile
+  }
+
+  function scrambleCube() {
+    // Scramble logic here
+    // ...
+    startGame();
+  }
+
+  function resetCube() {
+    // Reset logic here
+    // ...
+    stopGame();
+  }
+
+  function startGame() {
+    isGameActive = true;
+    timer = setInterval(updateTimer, 1000);
+  }
+
+  function stopGame() {
+    isGameActive = false;
+    clearInterval(timer);
+  }
+
+  function updateTimer() {
+    timeElapsed++;
+    document.getElementById('timer').textContent = formatTime(timeElapsed);
+  }
+
+  function formatTime(seconds) {
+    let mins = Math.floor(seconds / 60);
+    let secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+
+  // Event handlers for mouse interactions would be implemented here
+  // ...
+
+  init();
+</script>
+</body>
+</html>
