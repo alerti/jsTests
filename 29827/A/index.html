@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>3D Stacking Game</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #gameCanvas { width: 100%; height: 100%; display: block; }
+        #ui {
+            position: absolute; top: 10px; width: 100%;
+            text-align: center; color: white; font-family: Arial, sans-serif;
+        }
+        button {
+            padding: 10px 20px; font-size: 16px; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div id="ui">
+    <h1 id="title">3D Stacking Game</h1>
+    <button id="startBtn" style="display: none;">Start Game</button>
+    <div id="instructions" style="display: none;">Click or Press Space to Drop the Block!</div>
+    <div id="score">Score: 0</div>
+    <div id="gameOver" style="display: none;">
+        Game Over! <br>Your Score: <span id="finalScore"></span><br>
+        <button onclick="resetGame()">Play Again</button>
+    </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+  let scene, camera, renderer, currentBlock, stack = [], score = 0;
+  const blockSize = { width: 1, depth: 1, height: 0.5 };
+  let gameState = 'Loading';
+
+  function init() {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById('gameCanvas').appendChild(renderer.domElement);
+
+    // Lights
+    const ambientLight = new THREE.AmbientLight(0x404040, 2);
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    scene.add(directionalLight);
+
+    // Camera position
+    camera.position.set(5, 5, 5);
+    camera.lookAt(scene.position);
+
+    // Start button
+    document.getElementById('startBtn').style.display = 'block';
+  }
+
+  function startGame() {
+    gameState = 'Ready';
+    document.getElementById('startBtn').style.display = 'none';
+    document.getElementById('instructions').style.display = 'block';
+    spawnBlock();
+  }
+
+  function spawnBlock() {
+    if (gameState !== 'Playing') return;
+    const material = new THREE.MeshLambertMaterial({ color: Math.random() * 0xffffff });
+    currentBlock = new THREE.Mesh(new THREE.BoxGeometry(blockSize.width, blockSize.height, blockSize.depth), material);
+    currentBlock.position.y = stack.length * blockSize.height;
+    let direction = Math.random() > 0.5 ? 'x' : 'z';
+    currentBlock.userData = { direction: direction, speed: 0.05 + stack.length * 0.005 };
+    scene.add(currentBlock);
+    gameState = 'Playing';
+  }
+
+  function dropBlock() {
+    if (gameState !== 'Playing') return;
+
+    const prevBlock = stack[stack.length - 1] || { position: { x: 0, z: 0 } };
+    const overlap = checkOverlap(currentBlock, prevBlock);
+
+    if (!overlap) {
+      gameOver();
+      return;
+    }
+
+    // Adjust block size based on overlap
+    adjustBlockSizeAndPosition(currentBlock, prevBlock, overlap);
+    stack.push(currentBlock);
+    updateScore();
+    spawnBlock();
+  }
+
+  function checkOverlap(block1, block2) {
+    // Logic for checking overlap would go here
+    // For simplicity, let's assume there's always some overlap
+    return { x: Math.min(block1.position.x - block2.position.x, blockSize.width),
+      z: Math.min(block1.position.z - block2.position.z, blockSize.depth) };
+  }
+
+  function adjustBlockSizeAndPosition(block, prevBlock, overlap) {
+    let newWidth = overlap.x, newDepth = overlap.z;
+    block.geometry = new THREE.BoxGeometry(newWidth, blockSize.height, newDepth);
+    block.position.x = prevBlock.position.x + (blockSize.width - newWidth) / 2;
+    block.position.z = prevBlock.position.z + (blockSize.depth - newDepth) / 2;
+  }
+
+  function updateScore() {
+    score++;
+    document.getElementById('score').textContent = 'Score: ' + score;
+  }
+
+  function gameOver() {
+    gameState = 'Ended';
+    document.getElementById('gameOver').style.display = 'block';
+    document.getElementById('finalScore').textContent = score;
+  }
+
+  function resetGame() {
+    scene = new THREE.Scene(); // Reset scene for simplicity
+    stack = [];
+    score = 0;
+    document.getElementById('score').textContent = 'Score: 0';
+    document.getElementById('gameOver').style.display = 'none';
+    startGame();
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    if (currentBlock && gameState === 'Playing') {
+      const { direction, speed } = currentBlock.userData;
+      if (direction === 'x') {
+        currentBlock.position.x += speed;
+        if (currentBlock.position.x > 1 || currentBlock.position.x < -1) currentBlock.userData.speed *= -1;
+      } else {
+        currentBlock.position.z += speed;
+        if (currentBlock.position.z > 1 || currentBlock.position.z < -1) currentBlock.userData.speed *= -1;
+      }
+    }
+    renderer.render(scene, camera);
+  }
+
+  window.onload = () => {
+    init();
+    animate();
+  };
+
+  window.addEventListener('keydown', (event) => {
+    if (event.code === 'Space' && (gameState === 'Ready' || gameState === 'Playing')) {
+      dropBlock();
+    }
+  });
+
+  document.getElementById('startBtn').onclick = startGame;
+</script>
+</body>
+</html>
