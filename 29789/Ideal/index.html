@@ -1,310 +1,307 @@
 <!DOCTYPE html>
-<html lang="en" >
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>CodePen - Timed Cards Opening</title>
-    <link href="./style.css" rel="stylesheet">
+    <title>Timed Cards Opening</title>
+    <!-- Include the GSAP library -->
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js'></script>
+    <style>
+        @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:wght@500&display=swap");
+        body {
+            margin: 0;
+            background-color: #1a1a1a;
+            color: #FFFFFFDD;
+            position: relative;
+            overflow: hidden;
+            font-family: "Inter", sans-serif;
+        }
 
+        .card {
+            position: absolute;
+            left: 0;
+            top: 0;
+            background-position: center;
+            background-size: cover;
+            box-shadow: 6px 6px 10px 2px rgba(0, 0, 0, 0.6);
+        }
+
+        #btn {
+            position: absolute;
+            top: 690px;
+            left: 16px;
+            z-index: 99;
+        }
+
+        .card-content {
+            position: absolute;
+            left: 0;
+            top: 0;
+            color: #FFFFFFDD;
+            padding-left: 16px;
+        }
+
+        .content-place {
+            margin-top: 6px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .content-title-1,
+        .content-title-2 {
+            font-weight: 600;
+            font-size: 20px;
+            font-family: "Oswald", sans-serif;
+        }
+
+        .content-start {
+            width: 30px;
+            height: 5px;
+            border-radius: 99px;
+            background-color: #FFFFFFDD;
+        }
+
+        .discover {
+            margin-top: 10px;
+            padding: 5px 10px;
+            background-color: #ecad29;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .details {
+            z-index: 22;
+            position: absolute;
+            top: 240px;
+            left: 60px;
+        }
+        .details .place-box {
+            height: 46px;
+            overflow: hidden;
+        }
+        .details .place-box .text {
+            padding-top: 16px;
+            font-size: 20px;
+        }
+        .details .place-box .text:before {
+            top: 0;
+            left: 0;
+            position: absolute;
+            content: "";
+            width: 30px;
+            height: 4px;
+            border-radius: 99px;
+            background-color: white;
+        }
+        .details .title-1,
+        .details .title-2 {
+            font-weight: 600;
+            font-size: 72px;
+            font-family: "Oswald", sans-serif;
+        }
+        .details .title-box-1,
+        .details .title-box-2 {
+            margin-top: 2px;
+            height: 100px;
+            overflow: hidden;
+        }
+        .details > .desc {
+            margin-top: 16px;
+            width: 500px;
+        }
+        .details > .cta {
+            width: 500px;
+            margin-top: 24px;
+            display: flex;
+            align-items: center;
+        }
+        .details > .cta > .bookmark {
+            border: none;
+            background-color: #ecad29;
+            width: 36px;
+            height: 36px;
+            border-radius: 99px;
+            color: white;
+            display: grid;
+            place-items: center;
+        }
+        .details > .cta > .bookmark svg {
+            width: 20px;
+            height: 20px;
+        }
+        .details > .cta > .discover {
+            border: 1px solid #ffffff;
+            background-color: transparent;
+            height: 36px;
+            border-radius: 99px;
+            color: #ffffff;
+            padding: 4px 24px;
+            font-size: 12px;
+            margin-left: 16px;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        nav {
+            position: fixed;
+            left: 0;
+            top: 0;
+            right: 0;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 36px;
+            font-weight: 500;
+        }
+        nav svg {
+            width: 20px;
+            height: 20px;
+        }
+        nav .svg-container {
+            width: 20px;
+            height: 20px;
+        }
+        nav > div {
+            display: inline-flex;
+            align-items: center;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+        nav > div:first-child {
+            gap: 10px;
+        }
+        nav > div:last-child {
+            gap: 24px;
+        }
+        nav > div:last-child > .active {
+            position: relative;
+        }
+        nav > div:last-child > .active:after {
+            bottom: -8px;
+            left: 0;
+            right: 0;
+            position: absolute;
+            content: "";
+            height: 3px;
+            border-radius: 99px;
+            background-color: #ecad29;
+        }
+
+        .indicator {
+            position: fixed;
+            left: 0;
+            right: 0;
+            top: 0;
+            height: 5px;
+            z-index: 60;
+            background-color: #ecad29;
+        }
+
+        .pagination {
+            position: absolute;
+            left: 0px;
+            top: 0px;
+            display: inline-flex;
+        }
+        .pagination > .arrow {
+            z-index: 60;
+            width: 50px;
+            height: 50px;
+            border-radius: 999px;
+            border: 2px solid #ffffff55;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+        }
+        .pagination > .arrow:nth-child(2) {
+            margin-left: 20px;
+        }
+        .pagination > .arrow svg {
+            width: 24px;
+            height: 24px;
+            stroke-width: 2;
+            color: #ffffff99;
+        }
+        .pagination .progress-sub-container {
+            margin-left: 24px;
+            z-index: 60;
+            width: 500px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+        }
+        .pagination .progress-sub-container .progress-sub-background {
+            width: 500px;
+            height: 3px;
+            background-color: #ffffff33;
+        }
+        .pagination .progress-sub-container .progress-sub-background .progress-sub-foreground {
+            height: 3px;
+            background-color: #ecad29;
+        }
+        .pagination .slide-numbers {
+            width: 50px;
+            height: 50px;
+            overflow: hidden;
+            z-index: 60;
+            position: relative;
+        }
+        .pagination .slide-numbers .item {
+            width: 50px;
+            height: 50px;
+            position: absolute;
+            color: white;
+            top: 0;
+            left: 0;
+            display: grid;
+            place-items: center;
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .cover {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #fff;
+            z-index: 100;
+        }
+        #spotify-player {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            z-index: 99;
+            background-color: #1a1a1a;
+        }
+
+        iframe {
+            width: 100%;
+            height: 80px;
+            border-radius: 12px;
+        }
+    </style>
 </head>
 <body>
-<body>
-<style>
-    @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:wght@500&display=swap");
-    body {
-        margin: 0;
-        background-color: #1a1a1a;
-        color: #FFFFFFDD;
-        position: relative;
-        overflow: hidden;
-        font-family: "Inter", sans-serif;
-    }
-
-    .card {
-        position: absolute;
-        left: 0;
-        top: 0;
-        background-position: center;
-        background-size: cover;
-        box-shadow: 6px 6px 10px 2px rgba(0, 0, 0, 0.6);
-    }
-
-    #btn {
-        position: absolute;
-        top: 690px;
-        left: 16px;
-        z-index: 99;
-    }
-
-    .card-content {
-        position: absolute;
-        left: 0;
-        top: 0;
-        color: #FFFFFFDD;
-        padding-left: 16px;
-    }
-
-    .content-place {
-        margin-top: 6px;
-        font-size: 13px;
-        font-weight: 500;
-    }
-
-    .content-place {
-        font-weight: 500;
-    }
-
-    .content-title-1,
-    .content-title-2 {
-        font-weight: 600;
-        font-size: 20px;
-        font-family: "Oswald", sans-serif;
-    }
-
-    .content-start {
-        width: 30px;
-        height: 5px;
-        border-radius: 99px;
-        background-color: #FFFFFFDD;
-    }
-
-    .details {
-        z-index: 22;
-        position: absolute;
-        top: 240px;
-        left: 60px;
-    }
-    .details .place-box {
-        height: 46px;
-        overflow: hidden;
-    }
-    .details .place-box .text {
-        padding-top: 16px;
-        font-size: 20px;
-    }
-    .details .place-box .text:before {
-        top: 0;
-        left: 0;
-        position: absolute;
-        content: "";
-        width: 30px;
-        height: 4px;
-        border-radius: 99px;
-        background-color: white;
-    }
-    .details .title-1,
-    .details .title-2 {
-        font-weight: 600;
-        font-size: 72px;
-        font-family: "Oswald", sans-serif;
-    }
-    .details .title-box-1,
-    .details .title-box-2 {
-        margin-top: 2px;
-        height: 100px;
-        overflow: hidden;
-    }
-    .details > .desc {
-        margin-top: 16px;
-        width: 500px;
-    }
-    .details > .cta {
-        width: 500px;
-        margin-top: 24px;
-        display: flex;
-        align-items: center;
-    }
-    .details > .cta > .bookmark {
-        border: none;
-        background-color: #ecad29;
-        width: 36px;
-        height: 36px;
-        border-radius: 99px;
-        color: white;
-        display: grid;
-        place-items: center;
-    }
-    .details > .cta > .bookmark svg {
-        width: 20px;
-        height: 20px;
-    }
-    .details > .cta > .discover {
-        border: 1px solid #ffffff;
-        background-color: transparent;
-        height: 36px;
-        border-radius: 99px;
-        color: #ffffff;
-        padding: 4px 24px;
-        font-size: 12px;
-        margin-left: 16px;
-        text-transform: uppercase;
-    }
-
-    nav {
-        position: fixed;
-        left: 0;
-        top: 0;
-        right: 0;
-        z-index: 50;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 20px 36px;
-        font-weight: 500;
-    }
-    nav svg {
-        width: 20px;
-        height: 20px;
-    }
-    nav .svg-container {
-        width: 20px;
-        height: 20px;
-    }
-    nav > div {
-        display: inline-flex;
-        align-items: center;
-        text-transform: uppercase;
-        font-size: 14px;
-    }
-    nav > div:first-child {
-        gap: 10px;
-    }
-    nav > div:last-child {
-        gap: 24px;
-    }
-    nav > div:last-child > .active {
-        position: relative;
-    }
-    nav > div:last-child > .active:after {
-        bottom: -8px;
-        left: 0;
-        right: 0;
-        position: absolute;
-        content: "";
-        height: 3px;
-        border-radius: 99px;
-        background-color: #ecad29;
-    }
-
-    .indicator {
-        position: fixed;
-        left: 0;
-        right: 0;
-        top: 0;
-        height: 5px;
-        z-index: 60;
-        background-color: #ecad29;
-    }
-
-    .pagination {
-        position: absolute;
-        left: 0px;
-        top: 0px;
-        display: inline-flex;
-    }
-    .pagination > .arrow {
-        z-index: 60;
-        width: 50px;
-        height: 50px;
-        border-radius: 999px;
-        border: 2px solid #ffffff55;
-        display: grid;
-        place-items: center;
-    }
-    .pagination > .arrow:nth-child(2) {
-        margin-left: 20px;
-    }
-    .pagination > .arrow svg {
-        width: 24px;
-        height: 24px;
-        stroke-width: 2;
-        color: #ffffff99;
-    }
-    .pagination .progress-sub-container {
-        margin-left: 24px;
-        z-index: 60;
-        width: 500px;
-        height: 50px;
-        display: flex;
-        align-items: center;
-    }
-    .pagination .progress-sub-container .progress-sub-background {
-        width: 500px;
-        height: 3px;
-        background-color: #ffffff33;
-    }
-    .pagination .progress-sub-container .progress-sub-background .progress-sub-foreground {
-        height: 3px;
-        background-color: #ecad29;
-    }
-    .pagination .slide-numbers {
-        width: 50px;
-        height: 50px;
-        overflow: hidden;
-        z-index: 60;
-        position: relative;
-    }
-    .pagination .slide-numbers .item {
-        width: 50px;
-        height: 50px;
-        position: absolute;
-        color: white;
-        top: 0;
-        left: 0;
-        display: grid;
-        place-items: center;
-        font-size: 32px;
-        font-weight: bold;
-    }
-
-    .cover {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100vw;
-        height: 100vh;
-        background-color: #fff;
-        z-index: 100;
-    }
-    #spotify-player {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        z-index: 99;
-        background-color: #1a1a1a;
-    }
-
-    iframe {
-        width: 100%;
-        height: 80px;
-        border-radius: 12px;
-    }
-</style>
 <div class="indicator"></div>
 
 <nav>
     <div>
         <div class="svg-container">
-            <svg
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-            >
-                <path
-                        d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                />
-            </svg>
+            <!-- SVG Icon -->
         </div>
         <div>Ambience</div>
     </div>
     <div>
         <div class="active">Ambience</div>
         <div class="svg-container">
+            <!-- SVG Icons -->
         </div>
         <div class="svg-container">
+            <!-- SVG Icons -->
         </div>
     </div>
 </nav>
@@ -319,42 +316,17 @@
     </iframe>
 </div>
 <div id="demo"></div>
-<!-- Spotify Embed Iframe -->
-<div id="spotify-player">
-    <iframe
-            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-            allowfullscreen=""
-            frameBorder="0"
-            height="80"
-            loading="lazy"
-            src="https://open.spotify.com/embed/playlist/37i9dQZF1DX4PP3DA4J0N8?utm_source=generator"
-            style="width: 100%; border-radius:12px">
-    </iframe>
-</div>
-
 
 <div class="details" id="details-even">
     <div class="place-box">
-        <div class="text">Switzerland Alps</div>
+        <div class="text"></div>
     </div>
-    <div class="title-box-1"><div class="title-1">SAINT</div></div>
-    <div class="title-box-2"><div class="title-2">ANTONIEN</div></div>
-    <div class="desc">
-        Tucked away in the Switzerland Alps, Saint Antönien offers an idyllic retreat for those seeking tranquility and adventure alike. It's a hidden gem for backcountry skiing in winter and boasts lush trails for hiking and mountain biking during the warmer months.
-    </div>
+    <div class="title-box-1"><div class="title-1"></div></div>
+    <div class="title-box-2"><div class="title-2"></div></div>
+    <div class="desc"></div>
     <div class="cta">
         <button class="bookmark">
-            <svg
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-            >
-                <path
-                        clip-rule="evenodd"
-                        d="M6.32 2.577a49.255 49.255 0 0111.36 0c1.497.174 2.57 1.46 2.57 2.93V21a.75.75 0 01-1.085.67L12 18.089l-7.165 3.583A.75.75 0 013.75 21V5.507c0-1.47 1.073-2.756 2.57-2.93z"
-                        fill-rule="evenodd"
-                />
-            </svg>
+            <!-- SVG Icon -->
         </button>
         <button class="discover">Discover Location</button>
     </div>
@@ -362,28 +334,16 @@
 
 <div class="details" id="details-odd">
     <div class="place-box">
-        <div class="text">Switzerland Alps</div>
+        <div class="text"></div>
     </div>
-    <div class="title-box-1"><div class="title-1">SAINT </div></div>
-    <div class="title-box-2"><div class="title-2">ANTONIEN</div></div>
-    <div class="desc">
-        Tucked away in the Switzerland Alps, Saint Antönien offers an idyllic retreat for those seeking tranquility and adventure alike. It's a hidden gem for backcountry skiing in winter and boasts lush trails for hiking and mountain biking during the warmer months.
-    </div>
+    <div class="title-box-1"><div class="title-1"></div></div>
+    <div class="title-box-2"><div class="title-2"></div></div>
+    <div class="desc"></div>
     <div class="cta">
         <button class="bookmark">
-            <svg
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-            >
-                <path
-                        clip-rule="evenodd"
-                        d="M6.32 2.577a49.255 49.255 0 0111.36 0c1.497.174 2.57 1.46 2.57 2.93V21a.75.75 0 01-1.085.67L12 18.089l-7.165 3.583A.75.75 0 013.75 21V5.507c0-1.47 1.073-2.756 2.57-2.93z"
-                        fill-rule="evenodd"
-                />
-            </svg>
+            <!-- SVG Icon -->
         </button>
-        <button class="discover" onclick="discoverLocation('Marrakech')">Discover Location</button>
+        <button class="discover">Discover Location</button>
     </div>
 </div>
 
@@ -424,9 +384,7 @@
     <div class="slide-numbers" id="slide-numbers"></div>
 </div>
 <div class="cover" ></div>
-</body>
-<!-- partial -->
-<script src='https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js'></script><script  src="./script.js"></script>
+
 <script>
   const data = [
     {
@@ -438,7 +396,7 @@
     },
     {
       place:'Japan Alps',
-      title:'NANGANO',
+      title:'NAGANO',
       title2:'PREFECTURE',
       description:'Nagano Prefecture, set within the majestic Japan Alps, is a cultural treasure trove with its historic shrines and temples, particularly the famous Zenkō-ji. The region is also a hotspot for skiing and snowboarding, offering some of the country\'s best powder.',
       image:'https://assets.codepen.io/3685267/timed-cards-2.jpg'
@@ -446,14 +404,14 @@
     {
       place:'Sahara Desert - Morocco',
       title:'MARRAKECH',
-      title2:'MEROUGA',
+      title2:'MERZOUGA',
       description:'The journey from the vibrant souks and palaces of Marrakech to the tranquil, starlit sands of Merzouga showcases the diverse splendor of Morocco. Camel treks and desert camps offer an unforgettable immersion into the nomadic way of life.',
       image:'https://assets.codepen.io/3685267/timed-cards-3.jpg'
     },
     {
       place:'Sierra Nevada - USA',
       title:'YOSEMITE',
-      title2:'NATIONAL PARAK',
+      title2:'NATIONAL PARK',
       description:'Yosemite National Park is a showcase of the American wilderness, revered for its towering granite monoliths, ancient giant sequoias, and thundering waterfalls. The park offers year-round recreational activities, from rock climbing to serene valley walks.',
       image:'https://assets.codepen.io/3685267/timed-cards-4.jpg'
     },
@@ -467,27 +425,29 @@
     {
       place:'Cappadocia - Turkey',
       title:'Göreme',
-      title2:'Valley',
+      title2:'VALLEY',
       description:'Göreme Valley in Cappadocia is a historical marvel set against a unique geological backdrop, where centuries of wind and water have sculpted the landscape into whimsical formations. The valley is also famous for its open-air museums, underground cities, and the enchanting experience of hot air ballooning.',
       image:'https://assets.codepen.io/3685267/timed-cards-6.jpg'
     },
   ]
 
   const _ = (id)=>document.getElementById(id)
-  const cards = data.map((i, index)=>`<div class="card" id="card${index}" style="background-image:url(${i.image})"  ></div>`).join('')
-  const cardContents = data.map((i, index)=>`<div class="card-content" id="card-content-${index}">
-<div class="content-start"></div>
-<div class="content-place">${i.place}</div>
-<div class="content-title-1">${i.title}</div>
-<div class="content-title-2">${i.title2}</div>
+  const cards = data.map((i, index)=>`
+    <div class="card" id="card${index}" style="background-image:url(${i.image})"></div>
+  `).join('')
+  const cardContents = data.map((i, index)=>`
+    <div class="card-content" id="card-content-${index}">
+      <div class="content-start"></div>
+      <div class="content-place">${i.place}</div>
+      <div class="content-title-1">${i.title}</div>
+      <div class="content-title-2">${i.title2}</div>
+      <button class="discover" data-index="${index}">Discover Location</button>
+    </div>
+  `).join('')
 
-</div>`).join('')
-
-
-  const sildeNumbers = data.map((_, index)=>`<div class="item" id="slide-item-${index}" >${index+1}</div>`).join('')
+  const slideNumbers = data.map((_, index)=>`<div class="item" id="slide-item-${index}" >${index+1}</div>`).join('')
   _('demo').innerHTML =  cards + cardContents
-  _('slide-numbers').innerHTML =  sildeNumbers
-
+  _('slide-numbers').innerHTML =  slideNumbers
 
   const range = (n) =>
     Array(n)
@@ -526,11 +486,6 @@
   let numberSize = 50;
   const ease = "sine.inOut";
 
-  function discoverLocation(locationName) {
-    const formattedLocation = encodeURIComponent(locationName);
-    const wikipediaUrl = `https://en.wikipedia.org/wiki/${formattedLocation}`;
-    window.open(wikipediaUrl, '_blank');
-  }
   function init() {
     const [active, ...rest] = order;
     const detailsActive = detailsEven ? "#details-even" : "#details-odd";
@@ -617,26 +572,47 @@
     gsap.to("#pagination", { y: 0, opacity: 1, ease, delay: startDelay });
     gsap.to("nav", { y: 0, opacity: 1, ease, delay: startDelay });
     gsap.to(detailsActive, { opacity: 1, x: 0, ease, delay: startDelay });
+
+    // Update details for the first slide
+    updateDetails(order[0], detailsActive);
   }
 
-  let clicks = 0;
+  function updateDetails(index, detailsActive) {
+    document.querySelector(`${detailsActive} .place-box .text`).textContent =
+      data[index].place;
+    document.querySelector(`${detailsActive} .title-1`).textContent =
+      data[index].title;
+    document.querySelector(`${detailsActive} .title-2`).textContent =
+      data[index].title2;
+    document.querySelector(`${detailsActive} .desc`).textContent =
+      data[index].description;
 
-  function step() {
+    // Update the Discover button onclick handler
+    const discoverButton = document.querySelector(`${detailsActive} .discover`);
+    discoverButton.onclick = function() {
+      discoverLocation(data[index].place);
+    };
+  }
+
+  function discoverLocation(locationName) {
+    const formattedLocation = encodeURIComponent(locationName.split(' - ')[0]);
+    const wikipediaUrl = `https://en.wikipedia.org/wiki/${formattedLocation}`;
+    window.open(wikipediaUrl, '_blank');
+  }
+
+  function step(direction = 'forward') {
     return new Promise((resolve) => {
-      order.push(order.shift());
-      detailsEven = !detailsEven;
-
+      if (direction === 'forward') {
+        order.push(order.shift());
+        detailsEven = !detailsEven;
+      } else if (direction === 'backward') {
+        order.unshift(order.pop());
+        detailsEven = !detailsEven;
+      }
       const detailsActive = detailsEven ? "#details-even" : "#details-odd";
       const detailsInactive = detailsEven ? "#details-odd" : "#details-even";
 
-      document.querySelector(`${detailsActive} .place-box .text`).textContent =
-        data[order[0]].place;
-      document.querySelector(`${detailsActive} .title-1`).textContent =
-        data[order[0]].title;
-      document.querySelector(`${detailsActive} .title-2`).textContent =
-        data[order[0]].title2;
-      document.querySelector(`${detailsActive} .desc`).textContent =
-        data[order[0]].description;
+      updateDetails(order[0], detailsActive);
 
       gsap.set(detailsActive, { zIndex: 22 });
       gsap.to(detailsActive, { opacity: 1, delay: 0.4, ease });
@@ -674,7 +650,7 @@
       gsap.set(detailsInactive, { zIndex: 12 });
 
       const [active, ...rest] = order;
-      const prv = rest[rest.length - 1];
+      const prv = direction === 'forward' ? rest[rest.length - 1] : rest[0];
 
       gsap.set(getCard(prv), { zIndex: 10 });
       gsap.set(getCard(active), { zIndex: 20 });
@@ -726,10 +702,6 @@
           gsap.set(`${detailsInactive} .title-2`, { y: 100 });
           gsap.set(`${detailsInactive} .desc`, { y: 50 });
           gsap.set(`${detailsInactive} .cta`, { y: 60 });
-          clicks -= 1;
-          if (clicks > 0) {
-            step();
-          }
         },
       });
 
@@ -782,6 +754,33 @@
     return Promise.all(promises);
   }
 
+  function goToSlide(targetIndex) {
+    if (order[0] === targetIndex) {
+      // Already on desired slide
+      return;
+    }
+    let currentIndex = order.indexOf(targetIndex);
+    if (currentIndex === -1) {
+      return;
+    }
+    let stepsForward = currentIndex;
+    let stepsBackward = order.length - currentIndex;
+
+    if (stepsForward <= stepsBackward) {
+      for (let i = 0; i < stepsForward; i++) {
+        order.push(order.shift());
+        detailsEven = !detailsEven;
+      }
+      step('forward');
+    } else {
+      for (let i = 0; i < stepsBackward; i++) {
+        order.unshift(order.pop());
+        detailsEven = !detailsEven;
+      }
+      step('backward');
+    }
+  }
+
   async function start() {
     try {
       await loadImages();
@@ -791,7 +790,24 @@
     }
   }
 
-  start()
+  // Add event listeners to the arrow buttons
+  document.querySelector('.arrow-right').addEventListener('click', () => {
+    step('forward');
+  });
+
+  document.querySelector('.arrow-left').addEventListener('click', () => {
+    step('backward');
+  });
+
+  // Add event listeners to the Discover buttons in card contents
+  document.querySelectorAll('.card-content .discover').forEach(button => {
+    button.addEventListener('click', (event) => {
+      const index = parseInt(event.target.getAttribute('data-index'));
+      goToSlide(index);
+    });
+  });
+
+  start();
 </script>
 </body>
 </html>
