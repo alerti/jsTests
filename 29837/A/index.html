@@ -2,144 +2,163 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Tilting Maze Game</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
-        #gameArea { width: 300px; height: 300px; background: #fff; border: 2px solid #000; margin: 20px auto; position: relative; }
-        #ball { width: 15px; height: 15px; background: red; border-radius: 50%; position: absolute; }
-        #endZone { width: 20px; height: 20px; background: green; position: absolute; bottom: 10px; right: 10px; }
-        .wall { background: #000; position: absolute; }
-        #joystick { width: 80px; height: 80px; border: 2px solid #000; border-radius: 50%; position: fixed; bottom: 20px; left: 20px; }
-        #joystickHandle { width: 30px; height: 30px; background: #333; border-radius: 50%; position: absolute; top: 25px; left: 25px; }
-        #modeToggle, #instructions, #feedback { text-align: center; margin: 10px; }
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #f0f0f0;
+        }
+        #gameCanvas {
+            background: #fff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        #joystick {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: rgba(0, 128, 255, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #joystick-head {
+            width: 40px;
+            height: 40px;
+            background: #007BFF;
+            border-radius: 50%;
+            cursor: grab;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
     </style>
 </head>
 <body>
-<div id="gameArea">
-    <div id="ball"></div>
-    <div id="endZone"></div>
-    <!-- Walls will be dynamically added here -->
+<div id="joystick">
+    <div class="pulse" id="joystick-head"></div>
 </div>
-<div id="joystick"><div id="joystickHandle"></div></div>
-<div id="modeToggle"><button onclick="toggleMode()">Switch to Hard Mode</button></div>
-<div id="instructions">Drag the joystick to tilt the maze. Get the red ball to the green zone!</div>
-<div id="feedback"></div>
-
+<canvas id="gameCanvas"></canvas>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.14.2/matter.min.js"></script>
 <script>
-  const gameArea = document.getElementById('gameArea');
-  const ball = document.getElementById('ball');
-  const endZone = document.getElementById('endZone');
-  const joystickHandle = document.getElementById('joystickHandle');
-  const feedback = document.getElementById('feedback');
-  let isHardMode = false;
-  let tiltX = 0, tiltY = 0;
+  // Plan:
+  // 1. Set up Matter.js for physics
+  // 2. Create maze, balls, and target area
+  // 3. Implement joystick control for tilting the maze
+  // 4. Game logic for winning/losing
+  // 5. Mode switching and reset functionality
+
+  const { Engine, Render, World, Bodies, Body, Events } = Matter;
+
+  const engine = Engine.create();
+  const render = Render.create({
+    element: document.body,
+    canvas: document.getElementById('gameCanvas'),
+    engine: engine,
+    options: {
+      width: 800,
+      height: 600,
+      wireframes: false,
+      background: '#f0f0f0'
+    }
+  });
+
+  // Game elements
+  const mazeWalls = [
+    // Example walls, needs actual maze design
+    Bodies.rectangle(400, 0, 800, 20, { isStatic: true }),
+    Bodies.rectangle(400, 600, 800, 20, { isStatic: true }),
+    Bodies.rectangle(0, 300, 20, 600, { isStatic: true }),
+    Bodies.rectangle(800, 300, 20, 600, { isStatic: true }),
+  ];
+
+  const balls = Array(5).fill().map(() =>
+    Bodies.circle(400 + (Math.random() - 0.5) * 100, 100, 15, { restitution: 0.5 })
+  );
+
+  const targetArea = Bodies.circle(400, 400, 50, {
+    isStatic: true,
+    render: { fillStyle: 'rgba(0,255,0,0.3)' }
+  });
+
+  // Black holes for hard mode
   let blackHoles = [];
 
-  // Generate Maze
-  function generateMaze() {
-    // Simplified maze generation for this example
-    const walls = [
-      {left: '0', top: '100px', width: '100%', height: '2px'},
-      {left: '100px', top: '0', width: '2px', height: '100%'}
-    ];
-    walls.forEach(wall => {
-      let div = document.createElement('div');
-      div.className = 'wall';
-      Object.assign(div.style, wall);
-      gameArea.appendChild(div);
+  // Joystick functionality
+  const joystick = document.getElementById('joystick-head');
+  let isDragging = false;
+  let angleX = 0, angleY = 0;
+
+  joystick.addEventListener('mousedown', () => isDragging = true);
+  document.addEventListener('mousemove', (e) => {
+    if (isDragging) {
+      const bounds = joystick.parentElement.getBoundingClientRect();
+      angleX = ((e.clientX - bounds.left - 50) / 50) * 15;
+      angleY = ((e.clientY - bounds.top - 50) / 50) * 15;
+      // Clamp angles
+      angleX = Math.min(Math.max(angleX, -15), 15);
+      angleY = Math.min(Math.max(angleY, -15), 15);
+      applyTilt();
+    }
+  });
+  document.addEventListener('mouseup', () => isDragging = false);
+
+  function applyTilt() {
+    Body.setAngle(engine.world.bodies[0], angleY * (Math.PI / 180)); // Assuming first body is the base
+  }
+
+  // Game logic
+  function checkWin() {
+    const inTarget = balls.every(ball =>
+      Matter.Vector.magnitude(Matter.Vector.sub(ball.position, targetArea.position)) < 50);
+    if (inTarget) alert('You Win! Press space to reset.');
+  }
+
+  function resetGame() {
+    balls.forEach(ball => {
+      Body.setPosition(ball, {x: 400 + (Math.random() - 0.5) * 100, y: 100});
+      Body.setVelocity(ball, {x: 0, y: 0});
     });
+    // Reset black holes or any other dynamic elements here
   }
 
-  function createBlackHole() {
-    const hole = document.createElement('div');
-    hole.style.width = '15px';
-    hole.style.height = '15px';
-    hole.style.background = 'black';
-    hole.style.position = 'absolute';
-    hole.style.left = `${Math.random() * (gameArea.clientWidth - 15)}px`;
-    hole.style.top = `${Math.random() * (gameArea.clientHeight - 15)}px`;
-    gameArea.appendChild(hole);
-    blackHoles.push(hole);
-  }
-
-  function toggleMode() {
-    isHardMode = !isHardMode;
-    feedback.textContent = isHardMode ? "Hard Mode Enabled!" : "Easy Mode Enabled!";
-    if (isHardMode) {
-      for(let i = 0; i < 3; i++) createBlackHole();
-    } else {
-      blackHoles.forEach(hole => gameArea.removeChild(hole));
+  // Mode switching
+  document.addEventListener('keypress', (e) => {
+    if (e.key === 'h') {
+      // Add black holes for hard mode
+      blackHoles = [/* Add black hole bodies here */];
+    } else if (e.key === 'e') {
+      // Remove black holes for easy mode
+      blackHoles.forEach(h => World.remove(engine.world, h));
       blackHoles = [];
+    } else if (e.key === ' ') {
+      resetGame();
     }
-  }
+  });
 
-  // Joystick movement
-  joystickHandle.onmousedown = handleMouseDown;
-  document.onmousemove = handleMouseMove;
-  document.onmouseup = handleMouseUp;
+  // Setup world
+  World.add(engine.world, [...mazeWalls, targetArea, ...balls, ...blackHoles]);
 
-  let dragStart = null;
-  function handleMouseDown(event) {
-    dragStart = {x: event.clientX, y: event.clientY};
-  }
+  // Run the engine
+  Engine.run(engine);
+  Render.run(render);
 
-  function handleMouseMove(event) {
-    if (!dragStart) return;
-    event.preventDefault();
-    const maxMove = 40; // Limit joystick movement
-    tiltX = Math.min(Math.max((event.clientX - dragStart.x) / 4, -maxMove), maxMove);
-    tiltY = Math.min(Math.max((event.clientY - dragStart.y) / 4, -maxMove), maxMove);
-    joystickHandle.style.transform = `translate(${tiltX}px, ${tiltY}px)`;
-  }
-
-  function handleMouseUp() {
-    dragStart = null;
-    joystickHandle.style.transform = '';
-    tiltX = tiltY = 0;
-  }
-
-  // Game loop
-  function gameLoop() {
-    const ballRect = ball.getBoundingClientRect();
-    const endRect = endZone.getBoundingClientRect();
-
-    // Basic gravity simulation
-    let velX = tiltX * 0.1;
-    let velY = tiltY * 0.1;
-
-    // Check for collisions with walls, black holes, and win condition
-    if (isHardMode && blackHoles.some(hole => {
-      const holeRect = hole.getBoundingClientRect();
-      return !(ballRect.right < holeRect.left ||
-        ballRect.left > holeRect.right ||
-        ballRect.bottom < holeRect.top ||
-        ballRect.top > holeRect.bottom);
-    })) {
-      feedback.textContent = "Game Over! You hit a black hole.";
-      return;
-    }
-
-    if (!(ballRect.right < endRect.left ||
-      ballRect.left > endRect.right ||
-      ballRect.bottom < endRect.top ||
-      ballRect.top > endRect.bottom)) {
-      feedback.textContent = "You Win!";
-      return;
-    }
-
-    // Update ball position
-    let newLeft = parseFloat(ball.style.left || 0) + velX;
-    let newTop = parseFloat(ball.style.top || 0) + velY;
-
-    ball.style.left = `${Math.max(0, Math.min(newLeft, gameArea.clientWidth - ball.clientWidth))}px`;
-    ball.style.top = `${Math.max(0, Math.min(newTop, gameArea.clientHeight - ball.clientHeight))}px`;
-
-    requestAnimationFrame(gameLoop);
-  }
-
-  generateMaze();
-  gameLoop();
+  // Game loop to check conditions
+  Events.on(engine, 'afterUpdate', function() {
+    checkWin();
+    // Check for balls falling into black holes here if in hard mode
+  });
 </script>
 </body>
 </html>

@@ -4,146 +4,22 @@
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Tilting Maze Game</title>
-    <script src="https://cdn.jsdelivr.net/npm/nipplejs@0.8.5/dist/nipplejs.min.js"></script>
     <style>
-        body, html { height: 100%; margin: 0; display: flex; justify-content: center; align-items: center; background: #f0f0f0; }
-        #gameArea { width: 300px; height: 300px; border: 2px solid #000; position: relative; overflow: hidden; }
-        #maze { width: 100%; height: 100%; background: #ddd; position: absolute; }
-        #ball { width: 20px; height: 20px; background: red; border-radius: 50%; position: absolute; }
-        #endZone { width: 30px; height: 30px; background: green; position: absolute; bottom: 10px; right: 10px; }
-        .blackHole { width: 25px; height: 25px; background: black; position: absolute; border-radius: 50%; }
-        #joystick { width: 100px; height: 100px; position: fixed; bottom: 20px; left: 20px; }
-        #feedback { position: fixed; top: 10px; width: 100%; text-align: center; font-family: Arial, sans-serif; }
-        .wall { background: #555; position: absolute; }
+        body { margin: 0; background: #f0f0f0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        canvas { border: 2px solid #000; background: #fff; }
+        #joystick { position: fixed; bottom: 20px; left: 20px; width: 100px; height: 100px; background: rgba(255, 255, 255, 0.5); border-radius: 50%; }
+        #joystick-head { width: 40px; height: 40px; background: #007bff; border-radius: 50%; position: absolute; top: 30px; left: 30px; cursor: grab; }
+        .message { position: fixed; top: 10px; width: 100%; text-align: center; font-family: Arial, sans-serif; }
     </style>
 </head>
 <body>
-<div id="gameArea">
-    <div id="maze">
-        <div id="ball"></div>
-        <div id="endZone"></div>
-    </div>
+<div id="joystick">
+    <div id="joystick-head"></div>
 </div>
-<div id="joystick"></div>
-<div id="feedback"></div>
-
+<div class="message" id="gameMessage"></div>
+<canvas height="400" id="gameCanvas" width="600"></canvas>
 <script>
-  const gameArea = document.getElementById('gameArea');
-  const ball = document.getElementById('ball');
-  const maze = document.getElementById('maze');
-  const endZone = document.getElementById('endZone');
-  const feedback = document.getElementById('feedback');
-  let joystick, dx = 0, dy = 0, ballX = 10, ballY = 10, tiltX = 0, tiltY = 0, isHardMode = false;
-
-  // Function to create walls
-  function createWall(x, y, width, height) {
-    const wall = document.createElement('div');
-    wall.className = 'wall';
-    wall.style.left = `${x}px`;
-    wall.style.top = `${y}px`;
-    wall.style.width = `${width}px`;
-    wall.style.height = `${height}px`;
-    maze.appendChild(wall);
-  }
-
-  // Create maze structure
-  createWall(0, 0, 300, 10); // Top wall
-  createWall(0, 0, 10, 300); // Left wall
-  createWall(290, 0, 10, 300); // Right wall
-  createWall(0, 290, 300, 10); // Bottom wall
-  createWall(150, 0, 10, 200); // Vertical middle wall
-  createWall(0, 150, 200, 10); // Horizontal middle wall
-
-  // Initialize joystick
-  joystick = nipplejs.create({
-    zone: document.getElementById('joystick'),
-    mode: 'static',
-    position: {left: '50px', bottom: '50px'}
-  });
-
-  joystick.on('move', function(evt, data) {
-    dx = data.vector.x;
-    dy = -data.vector.y; // Invert y to match screen coordinates
-  });
-
-  joystick.on('end', function() {
-    dx = dy = 0;
-  });
-
-  // Game loop
-  function gameLoop() {
-    // Apply tilt based on joystick movement
-    tiltX += dx * 0.5;
-    tiltY += dy * 0.5;
-    maze.style.transform = `rotateX(${tiltY}deg) rotateY(${tiltX}deg)`;
-
-    // Simple gravity and movement
-    ballY += 0.1; // Gravity
-    ballX += Math.sin(tiltX * Math.PI / 180) * 2;
-    ballY += Math.sin(tiltY * Math.PI / 180) * 2;
-
-    // Collision detection with walls (simplified)
-    if (ballX < 0 || ballX > 280 || ballY < 0 || ballY > 280) {
-      feedback.textContent = 'You lost! Try again.';
-      resetGame();
-      return;
-    }
-
-    // Check win condition
-    if (Math.abs(ballX - 270) < 15 && Math.abs(ballY - 270) < 15) {
-      feedback.textContent = 'You won!';
-      resetGame();
-      return;
-    }
-
-    // Position the ball
-    ball.style.left = `${ballX}px`;
-    ball.style.top = `${ballY}px`;
-
-    // Hard mode: black holes
-    if (isHardMode && Math.random() < 0.01) {
-      createBlackHole();
-    }
-
-    requestAnimationFrame(gameLoop);
-  }
-
-  function createBlackHole() {
-    const hole = document.createElement('div');
-    hole.className = 'blackHole';
-    const x = Math.random() * 270;
-    const y = Math.random() * 270;
-    hole.style.left = `${x}px`;
-    hole.style.top = `${y}px`;
-    maze.appendChild(hole);
-
-    setTimeout(() => {
-      maze.removeChild(hole);
-    }, 5000);
-
-    // Check if ball falls into black hole
-    if (Math.sqrt((ballX - x)**2 + (ballY - y)**2) < 25) {
-      feedback.textContent = 'Caught by a black hole! You lost.';
-      resetGame();
-    }
-  }
-
-  function resetGame() {
-    ballX = ballY = 10;
-    tiltX = tiltY = 0;
-    maze.style.transform = '';
-    setTimeout(() => feedback.textContent = 'Drag the joystick to tilt the maze!', 2000);
-  }
-
-  // Start game
-  resetGame();
-  gameLoop();
-
-  // Toggle hard mode
-  document.addEventListener('click', function() {
-    isHardMode = !isHardMode;
-    feedback.textContent = isHardMode ? 'Hard Mode Activated!' : 'Normal Mode';
-  });
+  // JavaScript will go here
 </script>
 </body>
 </html>
